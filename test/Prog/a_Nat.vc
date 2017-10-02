@@ -1,0 +1,40 @@
+\open ::Paths
+
+\function plus (a b : Nat) : Nat => \elim a
+  | zero  => b
+  | suc a => suc (plus a b)
+
+\function plusZero (a : Nat) : plus a zero = a => \elim a
+  | zero  => idp
+  | suc a => pmap suc (plusZero a)
+
+\function plusSucc (a b : Nat) : plus a (suc b) = suc (plus a b) => \elim a
+  | zero  => idp
+  | suc a => pmap suc (plusSucc a b)
+
+\function plusComm (a b : Nat) : plus b a = plus a b => \elim a
+  | zero  => plusZero b
+  | suc a => plusSucc b a >== pmap suc (plusComm a b)
+
+\function plusAssc (a b c : Nat) : plus a (plus b c) = plus (plus a b) c => \elim a
+  | zero  => idp
+  | suc a => pmap suc (plusAssc a b c)
+
+\function mult (a b : Nat) : Nat => \elim a
+  | zero  => zero
+  | suc a => plus b (mult a b)
+
+\function multZero (b : Nat) : mult b zero = zero => \elim b
+  | zero  => idp
+  | suc b => multZero b
+
+\function multSucc (a b : Nat) : mult a (suc b) = plus a (mult a b) => \elim a
+  | zero  => idp
+  | suc a => pmap suc (pmap (plus b) (multSucc a b) >==
+                       plusAssc b a (mult a b) >==
+                       pmap (\lam m => plus m (mult a b)) (plusComm a b) >==
+                       inv (plusAssc a b (mult a b)))
+
+\function multDist (a b : Nat) : mult b a = mult a b => \elim a
+  | zero  => multZero b
+  | suc a => multSucc b a >== pmap (plus b) (multDist a b)

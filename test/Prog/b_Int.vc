@@ -1,0 +1,44 @@
+\open ::Paths
+\open ::Data::Int
+
+\function iPlusZero (a : Int) : a +$ zeroZ = a => \elim a
+  | pos zero => idp
+  | pos (suc a) => pmap sucZ (iPlusZero (pos a))
+  | neg (suc a) => pmap predZ (iPlusZero (neg a))
+
+\function iPlusPSuc (a : Nat) (b : Int) : b +$ pos (suc a) = sucZ (b +$ pos a) => \elim b
+  | pos zero => idp
+  | pos (suc b) => pmap sucZ (iPlusPSuc a (pos b))
+  | neg (suc b) => pmap predZ (iPlusPSuc a (neg b)) >==
+                   sucZ-predZ-linv (neg b +$ pos a) >==
+                   inv (sucZ-predZ-rinv (neg b +$ pos a))
+
+\function iPlusPPred (a : Nat) (b : Int) : b +$ neg (suc a) = predZ (b +$ neg a) => \elim b
+  | pos zero => idp
+  | pos (suc b) => pmap sucZ (iPlusPPred a (pos b)) >==
+                   sucZ-predZ-rinv (pos b +$ neg a) >==
+                   inv (sucZ-predZ-linv (pos b +$ neg a))
+  | neg (suc b) => pmap predZ (iPlusPPred a (neg b))
+
+\function iPlusComm (a b : Int) : b +$ a = a +$ b => \elim a
+  | pos zero => iPlusZero b
+  | pos (suc a) => iPlusPSuc  a b >== pmap sucZ  (iPlusComm (pos a) b)
+  | neg (suc a) => iPlusPPred a b >== pmap predZ (iPlusComm (neg a) b)
+
+\function iPlusSucZ (a b : Int) : sucZ (a +$ b) = sucZ a +$ b => \elim a
+  | pos zero => idp
+  | pos (suc a) => idp
+  | neg (suc a) => sucZ-predZ-rinv (neg a +$ b)
+
+\function iPlusPredZ (a b : Int) : predZ (a +$ b) = predZ a +$ b => \elim a
+  | pos zero => idp
+  | pos (suc a) => sucZ-predZ-linv (pos a +$ b)
+  | neg (suc a) => idp
+
+\function iPlusAssc (a b c : Int) : a +$ (b +$ c) = (a +$ b) +$ c => \elim a
+  | pos zero => idp
+  | pos (suc a) => pmap sucZ (iPlusAssc (pos a) b c) >==
+                   iPlusSucZ (pos a +$ b) c
+  | neg (suc a) => pmap predZ (iPlusAssc (neg a) b c) >==
+                   iPlusPredZ (neg a +$ b) c
+

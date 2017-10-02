@@ -1,0 +1,13 @@
+\open ::Paths
+
+\function isSurj {A B : \Set} (f : A -> B) : \Set =>
+  \Pi (b : B) -> \Sigma (a : A) (b = f a)
+
+\function compSurjIsSurj {A B C : \Set} (f : A -> B) (g : B -> C) {fs : isSurj f} {gs : isSurj g} : isSurj (\lam x => g (f x)) =>
+  \lam c => \let | b : \Sigma (x : B) (c = g x)   => gs c
+                 | a : \Sigma (x : A) (b.1 = f x) => fs b.1
+             \in (a.1, b.2 >== pmap g a.2)
+
+\function surjFromComp {A B C : \Set} (f : A -> B) (g : B -> C) {gfs : isSurj (\lam x => g (f x))} : isSurj g =>
+  \lam c => \let | a : \Sigma (x : A) (c = g (f x)) => gfs c
+             \in (f a.1, a.2)
