@@ -1,0 +1,30 @@
+\open ::Prog::d_Inj
+\open ::Prog::e_Surj
+\open ::Equiv
+\open ::Combinators
+\open ::Paths
+\open ::PropLogic
+
+\function fibS {A B : \Set} (f : A -> B) (b : B) : \Set
+  => \Sigma (x : A) (f x = b)
+
+\function im {A B : \Set} (f : A -> B) : \Set
+  => \Sigma (y : B) (fibS f y)
+
+\function inv-idp {A : \Type} {a : A} : inv (idp {A} {a}) = idp => idp
+
+\function everyFuncSurjInjComp {A B : \Set} (f : A -> B) :
+  \Sigma (S : \Set) (\Sigma (a : A -> S) (\Sigma (b : S -> B) (\Sigma (bi : isInj b) (\Sigma (as : isSurj2 a) (f = b `o a))))) =>
+  \let | nf : A -> im f   => \lam a => (f a, (a, idp))
+       | nb : im f -> B   => \lam b => b.1
+       | nfs : isSurj2 nf => \lam b => (b.2.1, inv (sigma-ext-eq (fibS f) {nf b.2.1} {b} (b.2.2,
+           (coe-sigma {\lam _ => A} (\lam i a => f a = (b.2.2 @ i)) (b.2.1, idp) right) >==
+           sigma-ext-eq (\lam k => f k = b.1) {(b.2.1, coe (\lam i => f b.2.1 = b.2.2 @ i) idp right)} {b.2}
+             (idp, coePath idp idp b.2.2 >==
+                   pmap (\lam x => x *> idp *> b.2.2) inv-idp >==
+                   pmap (\lam x => idp *> x) (concat-idp b.2.2) >==
+                   concat-idp b.2.2))))
+       | nbi : isInj nb   => \lam a a1 nbe => sigma-ext-eq (fibS f) {a} {a1} (nbe, 
+           (coe-sigma {\lam _ => A} (\lam i a => f a = (nbe @ i)) a.2 right) >==
+           {?})
+  \in (im f, (nf, (nb, (nbi, (nfs, idp)))))
