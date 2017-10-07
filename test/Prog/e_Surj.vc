@@ -1,13 +1,14 @@
 \open ::Paths
+\open ::Sets
+\open ::PropLogic
 
-\function isSurj2 {A B : \Set} (f : A -> B) : \Set =>
-  \Pi (b : B) -> \Sigma (a : A) (b = f a)
+\function propMap {A B : \Type} (f : A -> B) (a : TrP A) : TrP B => \elim a
+  | inP a => inP (f a)
 
-\function compSurjIsSurj {A B C : \Set} (f : A -> B) (g : B -> C) {fs : isSurj2 f} {gs : isSurj2 g} : isSurj2 (\lam x => g (f x)) =>
-  \lam c => \let | b : \Sigma (x : B) (c = g x)   => gs c
-                 | a : \Sigma (x : A) (b.1 = f x) => fs b.1
-             \in (a.1, b.2 >== pmap g a.2)
+\function compSurjIsSurj {A B C : \Set} (f : A -> B) (g : B -> C) {fs : isSurj f} {gs : isSurj g} : isSurj (\lam x => g (f x)) =>
+  \lam c => \case gs c \with { inP b => \case fs b.1 \with { inP a =>
+            \case b.2 \with { inP bpf => \case a.2 \with { inP apf =>
+            inP (a.1, inP (pmap g apf >== bpf)) } } } }
 
-\function surjFromComp {A B C : \Set} (f : A -> B) (g : B -> C) {gfs : isSurj2 (\lam x => g (f x))} : isSurj2 g =>
-  \lam c => \let | a : \Sigma (x : A) (c = g (f x)) => gfs c
-             \in (f a.1, a.2)
+\function surjFromComp {A B C : \Set} (f : A -> B) (g : B -> C) {gfs : isSurj (\lam x => g (f x))} : isSurj g =>
+  \lam c => \case gfs c \with { inP a => inP (f a.1, a.2) }
