@@ -1,18 +1,28 @@
 \open ::Prog::d_Inj
-\open ::Prog::e_Surj
 \open ::Equiv
 \open ::Combinators
 \open ::Paths
 \open ::PropLogic
+\open ::Sets
 
-\function fibS {A B : \Set} (f : A -> B) (b : B) : \Set
-  => \Sigma (x : A) (f x = b)
+\function everyFuncSurjInjComp {A B : \Set} (f : A -> B) :
+  \Sigma (S : \Set) (\Sigma (a : A -> S) (\Sigma (b : S -> B) (\Sigma (bi : isInj b) (\Sigma (as : isSurj a) (f = b `o a))))) =>
+  \let | nf : A -> im f => \lam a => (f a, inP (a, inP idp))
+       | nb : im f -> B => \lam b => b.1
+       | nfs : isSurj nf => \lam b => \case b.2 \with { inP b2 => inP (b2.1,
+           \case b2.2 \with { inP eqpf =>
+             inP (sigma-ext-eq (isInh `o fibS f) {nf b2.1} {b} (eqpf,
+               (coe-sigma (\lam i => (isInh `o fibS f) (eqpf @ i)) (b2.1, idp) right) >== {?}
+             ))
+           }) }
+       | nbi : isInj nb => \lam a a1 nbe => sigma-ext-eq (isInh `o fibS f) {a} {a1} (nbe,
+           prop-isProp (isInh (fibS f a1.1)) (coe (\lam (i : I) => (isInh `o (fibS f)) (nbe @ i)) a.2 right) a1.2)
+   \in (im f, (nf, (nb, (nbi, (nfs, idp)))))
 
-\function im {A B : \Set} (f : A -> B) : \Set
-  => \Sigma (y : B) (fibS f y)
+-- coe (\lam i => (isInh `o fibS f) (eqpf @ i)) (inP (b2.1, inP idp)) right = b.2
 
-\function inv-idp {A : \Type} {a : A} : inv (idp {A} {a}) = idp => idp
 
+{-
 \function everyFuncSurjInjComp {A B : \Set} (f : A -> B) :
   \Sigma (S : \Set) (\Sigma (a : A -> S) (\Sigma (b : S -> B) (\Sigma (bi : isInj b) (\Sigma (as : isSurj2 a) (f = b `o a))))) =>
   \let | nf : A -> im f   => \lam a => (f a, (a, idp))
@@ -28,3 +38,4 @@
            (coe-sigma {\lam _ => A} (\lam i a => f a = (nbe @ i)) a.2 right) >==
            {?})
   \in (im f, (nf, (nb, (nbi, (nfs, idp)))))
+-}
