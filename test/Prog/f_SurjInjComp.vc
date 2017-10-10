@@ -12,30 +12,8 @@
        | nfs : isSurj nf => \lam b => \case b.2 \with { inP b2 => inP (b2.1,
            \case b2.2 \with { inP eqpf =>
              inP (sigma-ext-eq (isInh `o fibS f) {nf b2.1} {b} (eqpf,
-               (coe-sigma (\lam i => (isInh `o fibS f) (eqpf @ i)) (b2.1, idp) right) >== {?}
-             ))
-           }) }
+               prop-isProp (isInh (fibS f b.1)) (coe (\lam i => (isInh `o fibS f) (eqpf @ i)) (inP (b2.1, inP idp)) right) b.2
+           ))})}
        | nbi : isInj nb => \lam a a1 nbe => sigma-ext-eq (isInh `o fibS f) {a} {a1} (nbe,
            prop-isProp (isInh (fibS f a1.1)) (coe (\lam (i : I) => (isInh `o (fibS f)) (nbe @ i)) a.2 right) a1.2)
    \in (im f, (nf, (nb, (nbi, (nfs, idp)))))
-
--- coe (\lam i => (isInh `o fibS f) (eqpf @ i)) (inP (b2.1, inP idp)) right = b.2
-
-
-{-
-\function everyFuncSurjInjComp {A B : \Set} (f : A -> B) :
-  \Sigma (S : \Set) (\Sigma (a : A -> S) (\Sigma (b : S -> B) (\Sigma (bi : isInj b) (\Sigma (as : isSurj2 a) (f = b `o a))))) =>
-  \let | nf : A -> im f   => \lam a => (f a, (a, idp))
-       | nb : im f -> B   => \lam b => b.1
-       | nfs : isSurj2 nf => \lam b => (b.2.1, inv (sigma-ext-eq (fibS f) {nf b.2.1} {b} (b.2.2,
-           (coe-sigma {\lam _ => A} (\lam i a => f a = (b.2.2 @ i)) (b.2.1, idp) right) >==
-           sigma-ext-eq (\lam k => f k = b.1) {(b.2.1, coe (\lam i => f b.2.1 = b.2.2 @ i) idp right)} {b.2}
-             (idp, coePath idp idp b.2.2 >==
-                   pmap (\lam x => x *> idp *> b.2.2) inv-idp >==
-                   pmap (\lam x => idp *> x) (concat-idp b.2.2) >==
-                   concat-idp b.2.2))))
-       | nbi : isInj nb   => \lam a a1 nbe => sigma-ext-eq (fibS f) {a} {a1} (nbe, 
-           (coe-sigma {\lam _ => A} (\lam i a => f a = (nbe @ i)) a.2 right) >==
-           {?})
-  \in (im f, (nf, (nb, (nbi, (nfs, idp)))))
--}
