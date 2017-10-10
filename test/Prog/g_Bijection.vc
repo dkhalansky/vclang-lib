@@ -1,0 +1,19 @@
+\open ::Prog::d_Inj
+\open ::Sets
+\open ::PropLogic
+\open ::Equiv
+\open ::Combinators
+\open ::Paths
+
+\function isBij {A B : \Set} (f : A -> B) : \Prop =>
+  exists (\lam g => (f `o g = id) &&& (g `o f = id))
+
+\function bijIsSurjAndInj {A B : \Set} (f : A -> B) (bij : isBij f) : (isSurj f &&& isInj f) =>
+  \case bij \with { inP r => (
+    \lam b => inP (r.1 b, inP (fun-ext-inv r.2.1 b))
+  ,
+    \lam a1 a2 req => inv (fun-ext-inv r.2.2 a1) >== pmap r.1 req >== fun-ext-inv r.2.2 a2
+  )}
+
+\function surjAndInjIsBij {A B : \Set} (f : A -> B) (inj : isInj f) (surj : isSurj f) : isBij f =>
+  {?}
