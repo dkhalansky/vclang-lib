@@ -6,15 +6,15 @@
 \open ::Paths
 \open ::Hlevel
 
-\function isBij {A B : \Set} (f : A -> B) : \Prop =>
-  exists (\lam g => (f `o g = id) &&& (g `o f = id))
+\function isBij {A B : \Set} (f : A -> B) : \Set =>
+  \Sigma (g : B -> A) ((f `o g = id) &&& (g `o f = id))
 
 \function bijIsSurjAndInj {A B : \Set} (f : A -> B) (bij : isBij f) : (isSurj f &&& isInj f) =>
-  \case bij \with { inP r => (
-    \lam b => inP (r.1 b, inP (fun-ext-inv r.2.1 b))
+  (
+    \lam b => inP (bij.1 b, inP (fun-ext-inv bij.2.1 b))
   ,
-    \lam a1 a2 req => inv (fun-ext-inv r.2.2 a1) >== pmap r.1 req >== fun-ext-inv r.2.2 a2
-  )}
+    \lam a1 a2 req => inv (fun-ext-inv bij.2.2 a1) >== pmap bij.1 req >== fun-ext-inv bij.2.2 a2
+  )
 
 \function isInjSynonym {A B : \Set} {f : A -> B} (inj : isInj f) : \Pi (b : B) -> isProp (fibS f b) =>
   \lam b a1 a2 =>
@@ -30,9 +30,6 @@
 
 \function surjAndInjIsBij {A B : \Set} (f : A -> B) (inj : isInj f) (surj : isSurj f) : isBij f =>
   \let g => \lam b => (inP-inv-enhanced (isInjSynonym {A} {B} {f} inj b) (surj b))
-   \in inP (\lam b => (g b).1,
+   \in (\lam b => (g b).1,
      (fun-ext (\lam b => inP-inv (f (g b).1 = b) (g b).2),
       fun-ext (\lam a => inj (g (f a)).1 a (inP-inv (f (g (f a)).1 = f a) (g (f a)).2))))
-
-\function bijIsSurjInj {A B : \Set} (f : A -> B) : isBij f = (isSurj f &&& isInj f) =>
-  prop-ext (\lam bi => bijIsSurjAndInj f bi, \lam si => surjAndInjIsBij f si.2 si.1)
