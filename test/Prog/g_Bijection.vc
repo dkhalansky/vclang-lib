@@ -1,4 +1,5 @@
 \open ::Prog::d_Inj
+\open ::Prog::e_Surj
 \open ::Sets
 \open ::PropLogic
 \open ::Equiv
@@ -33,3 +34,8 @@
    \in (\lam b => (g b).1,
      (fun-ext (\lam b => inP-inv (f (g b).1 = b) (g b).2),
       fun-ext (\lam a => inj (g (f a)).1 a (inP-inv (f (g (f a)).1 = f a) (g (f a)).2))))
+
+\function bijCompIsBij {A B C : \Set} (f : A -> B) (g : B -> C) (fb : isBij f) (gb : isBij g) : isBij (g `o f) =>
+  \let isInj  : isInj  (g `o f) => compInjIsInj   f g {(bijIsSurjAndInj f fb).2} {(bijIsSurjAndInj g gb).2}
+     | isSurj : isSurj (g `o f) => compSurjIsSurj f g {(bijIsSurjAndInj f fb).1} {(bijIsSurjAndInj g gb).1}
+   \in surjAndInjIsBij (g `o f) isInj isSurj

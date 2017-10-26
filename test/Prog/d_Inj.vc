@@ -1,10 +1,11 @@
 \open ::Paths
+\open ::Combinators
 
 \function isInj {A B : \Set} (f : A -> B) : \Prop =>
   \Pi (a1 a2 : A) -> f a1 = f a2 -> a1 = a2
 
-\function compInjIsInj {A B C : \Set} (f : A -> B) (g : B -> C) {fi : isInj f} {gi : isInj g} : isInj (\lam x => g (f x)) =>
+\function compInjIsInj {A B C : \Set} (f : A -> B) (g : B -> C) {fi : isInj f} {gi : isInj g} : isInj (g `o f) =>
   \lam a1 a2 gfe => fi a1 a2 (gi (f a1) (f a2) gfe) 
 
-\function injFromComp {A B C : \Set} (f : A -> B) (g : B -> C) {gfi : isInj (\lam x => g (f x))} : isInj f =>
+\function injFromComp {A B C : \Set} (f : A -> B) (g : B -> C) {gfi : isInj (g `o f)} : isInj f =>
   \lam a1 a2 fe => gfi a1 a2 (pmap g fe)

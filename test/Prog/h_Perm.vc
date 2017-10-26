@@ -1,0 +1,28 @@
+\open ::Prog::g_Bijection
+\open ::Sets
+\open ::PropLogic
+\open ::Equiv
+\open ::Combinators
+\open ::Paths
+\open ::Hlevel
+\open ::Data::Fin
+
+-- Permutation group
+
+\function isPerm {A : \Set} (f : A -> A) : \Set => isBij f
+
+\function permCompIsPerm {A : \Set} (f : A -> A) (g : A -> A) (fp : isPerm f) (gp : isPerm g) : isPerm (g `o f) => bijCompIsBij f g fp gp
+
+\function permIdentity {A : \Set} : \Sigma (f : A -> A) (isBij f) => (id, (id, (idp, idp)))
+
+\function permInverse {A : \Set} (f : A -> A) (fp : isPerm f) : \Sigma (g : A -> A) (isPerm g) => (fp.1, (f, (fp.2.2, fp.2.1)))
+
+-- Finiteness
+
+\function subsetIsFinite {A : \Set} (B : A -> \Prop) (n : Nat) : \Prop => exists (\lam (f : Fin n -> (\Sigma (a : A) (B a))) => isSurj f)
+
+\function isPermSupport {A : \Set} (f : A -> A) (B : A -> \Prop) : \Prop => \Pi (a : A) -> B a ||| (f a = a)
+
+-- Finite permutation group
+
+\function finitePerm {A : \Set} (f : A -> A) : \Set => \Sigma (n : Nat) (exists (\lam B => isPermSupport f B &&& subsetIsFinite B n))
