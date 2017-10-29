@@ -6,6 +6,7 @@
 \open ::Paths
 \open ::Hlevel
 \open ::Data::Fin
+\open ::Data::Either
 
 -- Permutation group
 
@@ -25,4 +26,17 @@
 
 -- Finite permutation group
 
-\function finitePerm {A : \Set} (f : A -> A) : \Set => \Sigma (n : Nat) (exists (\lam B => isPermSupport f B &&& subsetIsFinite B n))
+\function finitePerm {A : \Set} (f : A -> A) : \Set => \Sigma (isPerm f) (\Sigma (n : Nat) (exists (\lam B => isPermSupport f B &&& subsetIsFinite B n)))
+
+-- \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) => {?}
+
+\function finiteIdentity {A : \Set} : \Sigma (f : A -> A) (finitePerm f) =>
+  (id, ((id, (idp, idp)), (0, inP ((\lam a => False), (\lam a => inP (inr idp), inP (\lam a => \case a \with {}, \lam b => \case b.2 \with {}))))))
+
+\function inP-map {A B : \Type} (f : A -> B) (a : TrP A) : TrP B => \elim a
+  | inP v => inP (f v)
+
+\function finiteInverse {A : \Set} (f : A -> A) (ff : finitePerm f) : \Sigma (g : A -> A) (finitePerm g) =>
+  ((permInverse f ff.1).1, ((permInverse f ff.1).2, (ff.2.1, \case ff.2.2 \with {
+    inP Bp => inP (Bp.1, (\lam a => inP-map (map-inr (\lam p => inv (pmap ff.1.1 p) *> fun-ext-inv ff.1.2.2 a)) (Bp.2.1 a), Bp.2.2))
+  })))
