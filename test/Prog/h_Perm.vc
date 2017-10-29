@@ -12,6 +12,9 @@
 \open ::Data::Nat::Compare
 \open ::Data::Nat::Properties
 \open ::Relation
+\open ::Data::Empty
+\open ::Data::Unit
+\open ::Data::Bool
 
 -- Permutation group
 
@@ -41,8 +44,29 @@
   | zero => idp
   | suc b' => pred-suc-minus (b' + a) b' *> plus-minus-inv a b'
 
-\function fin-minus (n m o : Nat) (a : Fin (n + m)) (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) =>
-  {?}
+\function pred-suc-inv (n : Nat) : pred (suc n) = n => \elim n
+  | zero => idp
+  | suc n' => idp
+
+\function eq-unsuc {a b : Nat} (p : suc a = suc b) : a = b => inv (pred-suc-inv a) *> pmap pred p *> pred-suc-inv b
+
+\function minus-remove-suc {n m : Nat} : (suc n - suc m = n - m) => pred-suc-minus n m
+
+\function fin-bounded {n : Nat} (fn : Fin n) : to-nat fn `Lt n => \elim n, fn
+  | suc n', fzero => le_ss le_z
+  | suc n', fsuc fn' => le_ss (fin-bounded fn')
+
+\function fin-minus-helper {n o : Nat} (p : (n + o) `Lt (n + 0)) : Empty => \elim n
+  | zero => suc_nle_zero p
+  | suc n => fin-minus-helper (Le_unsuc p)
+
+\function fin-minus (n m o : Nat) (a : Fin (n + m)) (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) => \elim n, m, a
+  | zero,   suc m', fzero => (fzero {m'}, p)
+  | suc n', zero,   fzero => absurd (zero-ne-suc p)
+  | suc n', suc m', fzero => absurd (zero-ne-suc p)
+  | zero,   suc m', fsuc a' => (fsuc {m'} a', p)
+  | suc n', zero,   fsuc a' => absurd (fin-minus-helper (transport (\lam x => x `Le (n' + 0)) p (fin-bounded a')))
+  | suc n', suc m', fsuc a' => fin-minus n' (suc m') o a' (eq-unsuc p)
 
 \function fin-transport-id {n m : Nat} (f : Fin n) (p : n = m) : to-nat f = to-nat (transport Fin p f) =>
   {?}
@@ -54,6 +78,15 @@
 
 \function plus-comm1 (n m : Nat) : suc (n + m) = n + suc m =>
   pmap suc (plus-comm n m) *> plus-comm (suc m) n
+
+{-
+\function fin-partition (n m : Nat) (f : Fin (n + m)) : Either (Fin n) (Fin m) =>
+  \case cmp n (to-nat a) \with {
+    | tri_lt p _ _ => {?}
+    | tri_eq _ p _ => {?}
+    | tri_gt _ _ p => {?}
+  }
+-}
 
 \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
   (permCompIsPerm f g ff.1 gf.1, (ff.2.1 + gf.2.1, \case ff.2.2 \with { inP Bf => \case gf.2.2 \with { inP Bg =>
