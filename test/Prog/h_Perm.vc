@@ -1,3 +1,4 @@
+\open ::Data::Nat::Base
 \open ::Prog::g_Bijection
 \open ::Sets
 \open ::PropLogic
@@ -28,7 +29,20 @@
 
 \function finitePerm {A : \Set} (f : A -> A) : \Set => \Sigma (isPerm f) (\Sigma (n : Nat) (exists (\lam B => isPermSupport f B &&& subsetIsFinite B n)))
 
--- \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) => {?}
+\function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
+  (permCompIsPerm f g ff.1 gf.1, (ff.2.1 + gf.2.1, \case ff.2.2 \with { inP Bf => \case gf.2.2 \with { inP Bg =>
+    inP (\lam a => Bf.1 a ||| Bg.1 a, (\lam a => \case Bf.2.1 a \with { inP bfs => \case Bg.2.1 a \with { inP bgs =>
+      inP (\case bfs \with {
+        | inl bfsa => inl (inP (inl bfsa))
+        | inr fp => \case bgs \with {
+          | inl bgsa => inl (inP (inr bgsa))
+          | inr gp => inr (pmap g fp *> gp)
+        }
+      })
+    }}, \case Bf.2.2 \with { inP bffn => \case Bg.2.2 \with { inP bgfn => 
+      inP (\lam a => {?}, \lam a => {?})
+    }}))
+  }}))
 
 \function finiteIdentity {A : \Set} : \Sigma (f : A -> A) (finitePerm f) =>
   (id, ((id, (idp, idp)), (0, inP ((\lam a => False), (\lam a => inP (inr idp), inP (\lam a => \case a \with {}, \lam b => \case b.2 \with {}))))))
