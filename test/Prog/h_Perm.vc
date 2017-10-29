@@ -7,7 +7,11 @@
 \open ::Paths
 \open ::Hlevel
 \open ::Data::Fin
+\open ::Data::Fin::Properties
 \open ::Data::Either
+\open ::Data::Nat::Compare
+\open ::Data::Nat::Properties
+\open ::Relation
 
 -- Permutation group
 
@@ -29,6 +33,28 @@
 
 \function finitePerm {A : \Set} (f : A -> A) : \Set => \Sigma (isPerm f) (\Sigma (n : Nat) (exists (\lam B => isPermSupport f B &&& subsetIsFinite B n)))
 
+\function Le-is-addition (a b : Nat) (g : a `Le b) : \Sigma (c : Nat) (b = a + c) => \elim a, b, g
+  | zero, b, _ => (b, idp)
+  | suc a, suc b, le_ss p => \let res => Le-is-addition a b p \in (res.1, pmap suc res.2)
+
+\function plus-minus-inv (a b : Nat) : b + a - b = a => \elim b
+  | zero => idp
+  | suc b' => pred-suc-minus (b' + a) b' *> plus-minus-inv a b'
+
+\function fin-minus (n m o : Nat) (a : Fin (n + m)) (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) =>
+  {?}
+
+\function fin-transport-id {n m : Nat} (f : Fin n) (p : n = m) : to-nat f = to-nat (transport Fin p f) =>
+  {?}
+
+\function fin-precise (n m : Nat) (p : n `Gt m) : \Sigma (c : Fin n) (m = to-nat c) =>
+  \let res => Le-is-addition (suc m) n p
+     | f   => flift res.1 (from-nat m)
+   \in (transport Fin (inv res.2) f, inv (from-to-id m) *> flift-id res.1 (from-nat m) *> fin-transport-id f (inv res.2))
+
+\function plus-comm1 (n m : Nat) : suc (n + m) = n + suc m =>
+  pmap suc (plus-comm n m) *> plus-comm (suc m) n
+
 \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
   (permCompIsPerm f g ff.1 gf.1, (ff.2.1 + gf.2.1, \case ff.2.2 \with { inP Bf => \case gf.2.2 \with { inP Bg =>
     inP (\lam a => Bf.1 a ||| Bg.1 a, (\lam a => \case Bf.2.1 a \with { inP bfs => \case Bg.2.1 a \with { inP bgs =>
@@ -40,7 +66,21 @@
         }
       })
     }}, \case Bf.2.2 \with { inP bffn => \case Bg.2.2 \with { inP bgfn => 
-      inP (\lam a => {?}, \lam a => {?})
+      inP ((\lam a => \case cmp ff.2.1 (to-nat a) \with {
+        | tri_lt p _ _ => \let | ad => Le-is-addition (1 + ff.2.1) (to-nat a) p
+                               | arg => fin-minus ff.2.1 gf.2.1 (1 + ad.1) a (ad.2 *> plus-comm1 ff.2.1 ad.1)
+                               | res => bgfn.1 arg.1
+                           \in (res.1, inP (inr res.2))
+        | tri_eq _ p _ => \let | arg => fin-minus ff.2.1 gf.2.1 0 a (inv p *> plus-comm0 ff.2.1)
+                               | res => bgfn.1 arg.1
+                           \in (res.1, inP (inr res.2))
+        | tri_gt _ _ p => \let | arg => fin-precise ff.2.1 (to-nat a) p
+                               | res => bffn.1 arg.1
+                           \in (res.1, inP (inl res.2))
+      }), \lam a => \case a.2 \with {
+        | inP (inl p) => inP-map (\lam pf => {?}) (bffn.2 (a.1, p))
+        | inP (inr p) => inP-map (\lam pf => {?}) (bgfn.2 (a.1, p))
+      })
     }}))
   }}))
 
