@@ -15,6 +15,7 @@
 \open ::Data::Empty
 \open ::Data::Unit
 \open ::Data::Bool
+\open ::Logic
 
 -- Permutation group
 
@@ -89,15 +90,31 @@
   | zero,  zero  => absurd (suc_nle_zero p)
   | suc n, zero  => absurd (suc_nle_zero p)
 
-\function fin-partition {n m : Nat} (a : Fin (n + m)) : Either (Fin n) (Fin m) =>
-  \case Lt-dec (to-nat a) n \with {
-    | inl p => inr (fin-minus a (Le-is-addition n (to-nat a) (nlt-ge p)).2).1
-    | inr p => inl (fin-precise p).1
-  }
+\function fin-partition-helper {n m : Nat} {a : Fin (n + m)} (d : Dec (to-nat a `Lt n)) : Either (Fin n) (Fin m) => \elim d
+  | inl p => inr (fin-minus a (Le-is-addition n (to-nat a) (nlt-ge p)).2).1
+  | inr p => inl (fin-precise p).1
+
+\function fin-partition {n m : Nat} (a : Fin (n + m)) : Either (Fin n) (Fin m) => fin-partition-helper (Lt-dec (to-nat a) n)
 
 \function fin-departition {n m : Nat} (a : Either (Fin n) (Fin m)) : Fin (n + m) => \elim a
   | inl p => flift m p
   | inr p => fadd n p
+
+\function either-helper {A B : \Type} (d : Either A B) : Either (\Sigma (a : A) (d = inl a)) (\Sigma (b : B) (d = inr b)) => \elim d
+  | inl a => inl (a, idp)
+  | inr a => inr (a, idp)
+
+\function fin-partition-isSurj {n m : Nat} : isSurj (fin-partition {n} {m}) =>
+  \lam b => inP (fin-departition b, inP (
+    \case either-helper b \with {
+      | inl p => transport (\lam c => (fin-partition (fin-departition c)) = c) (inv p.2) (
+          \case either-helper (Lt-dec (to-nat (flift m p.1)) n) \with {
+            | inl ct => absurd (ct.1 (transport (\lam tnt => tnt `Lt n) (flift-id m p.1) (fin-bounded p.1)))
+            | inr pf => pmap fin-partition-helper pf.2 *> pmap inl {?}
+          })
+      | inr p => {?}
+    }
+  ))
 
 {-
 \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
