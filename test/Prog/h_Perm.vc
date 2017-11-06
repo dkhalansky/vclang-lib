@@ -95,6 +95,10 @@
     | inr p => inl (fin-precise p).1
   }
 
+\function fin-departition {n m : Nat} (a : Either (Fin n) (Fin m)) : Fin (n + m) => \elim a
+  | inl p => flift m p
+  | inr p => transport Fin (plus-comm m n) (flift n p)
+
 {-
 \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
   (permCompIsPerm f g ff.1 gf.1, (ff.2.1 + gf.2.1, \case ff.2.2 \with { inP Bf => \case gf.2.2 \with { inP Bg =>
