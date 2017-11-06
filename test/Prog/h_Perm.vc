@@ -60,34 +60,42 @@
   | zero => suc_nle_zero p
   | suc n => fin-minus-helper (Le_unsuc p)
 
-\function fin-minus (n m o : Nat) (a : Fin (n + m)) (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) => \elim n, m, a
+\function fin-minus {n m o : Nat} (a : Fin (n + m)) (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) => \elim n, m, a
   | zero,   suc m', fzero => (fzero {m'}, p)
   | suc n', zero,   fzero => absurd (zero-ne-suc p)
   | suc n', suc m', fzero => absurd (zero-ne-suc p)
   | zero,   suc m', fsuc a' => (fsuc {m'} a', p)
   | suc n', zero,   fsuc a' => absurd (fin-minus-helper (transport (\lam x => x `Le (n' + 0)) p (fin-bounded a')))
-  | suc n', suc m', fsuc a' => fin-minus n' (suc m') o a' (eq-unsuc p)
+  | suc n', suc m', fsuc a' => fin-minus a' (eq-unsuc p)
 
-\function fin-transport-id {n m : Nat} (f : Fin n) (p : n = m) : to-nat f = to-nat (transport Fin p f) =>
-  {?}
-
-\function fin-precise (n m : Nat) (p : n `Gt m) : \Sigma (c : Fin n) (m = to-nat c) =>
-  \let res => Le-is-addition (suc m) n p
-     | f   => flift res.1 (from-nat m)
-   \in (transport Fin (inv res.2) f, inv (from-to-id m) *> flift-id res.1 (from-nat m) *> fin-transport-id f (inv res.2))
+\function fin-precise {n m : Nat} (p : n `Gt m) : \Sigma (c : Fin n) (m = to-nat c) => \elim n, m
+  | zero, _ => absurd (suc_nle_zero p)
+  | suc n, zero  => (fzero, idp)
+  | suc n, suc m => \let z => fin-precise (Le_unsuc p)
+                     \in (fsuc z.1, pmap suc z.2)
 
 \function plus-comm1 (n m : Nat) : suc (n + m) = n + suc m =>
   pmap suc (plus-comm n m) *> plus-comm (suc m) n
 
-{-
-\function fin-partition (n m : Nat) (f : Fin (n + m)) : Either (Fin n) (Fin m) =>
-  \case cmp n (to-nat a) \with {
-    | tri_lt p _ _ => {?}
-    | tri_eq _ p _ => {?}
-    | tri_gt _ _ p => {?}
-  }
--}
+\function nlt-ge {n m : Nat} (p : Not (n `Lt m)) : m `Le n => \elim n, m
+  | zero, zero  => le_z
+  | suc n, zero => le_z
+  | zero, suc m => absurd (p (le_ss le_z))
+  | suc n, suc m => le_ss (nlt-ge (\lam nltm => p (le_ss nltm)))
 
+\function lt-le {n m : Nat} (p : n `Lt m) : n `Le m => \elim n, m
+  | zero,  suc m => le_z
+  | suc n, suc m => le_ss (lt-le (Le_unsuc p))
+  | zero,  zero  => absurd (suc_nle_zero p)
+  | suc n, zero  => absurd (suc_nle_zero p)
+
+\function fin-partition {n m : Nat} (a : Fin (n + m)) : Either (Fin n) (Fin m) =>
+  \case Lt-dec (to-nat a) n \with {
+    | inl p => inr (fin-minus a (Le-is-addition n (to-nat a) (nlt-ge p)).2).1
+    | inr p => inl (fin-precise p).1
+  }
+
+{-
 \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
   (permCompIsPerm f g ff.1 gf.1, (ff.2.1 + gf.2.1, \case ff.2.2 \with { inP Bf => \case gf.2.2 \with { inP Bg =>
     inP (\lam a => Bf.1 a ||| Bg.1 a, (\lam a => \case Bf.2.1 a \with { inP bfs => \case Bg.2.1 a \with { inP bgs =>
@@ -116,6 +124,7 @@
       })
     }}))
   }}))
+-}
 
 \function finiteIdentity {A : \Set} : \Sigma (f : A -> A) (finitePerm f) =>
   (id, ((id, (idp, idp)), (0, inP ((\lam a => False), (\lam a => inP (inr idp), inP (\lam a => \case a \with {}, \lam b => \case b.2 \with {}))))))
