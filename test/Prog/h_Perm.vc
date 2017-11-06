@@ -97,7 +97,7 @@
 
 \function fin-departition {n m : Nat} (a : Either (Fin n) (Fin m)) : Fin (n + m) => \elim a
   | inl p => flift m p
-  | inr p => transport Fin (plus-comm m n) (flift n p)
+  | inr p => fadd n p
 
 {-
 \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
