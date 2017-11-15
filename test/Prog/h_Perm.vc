@@ -61,13 +61,13 @@
   | zero => suc_nle_zero p
   | suc n => fin-minus-helper (Le_unsuc p)
 
-\function fin-minus {n m o : Nat} (a : Fin (n + m)) (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) => \elim n, m, a
+\function fin-minus {n m o : Nat} {a : Fin (n + m)} (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) => \elim n, m, a
   | zero,   suc m', fzero => (fzero {m'}, p)
   | suc n', zero,   fzero => absurd (zero-ne-suc p)
   | suc n', suc m', fzero => absurd (zero-ne-suc p)
   | zero,   suc m', fsuc a' => (fsuc {m'} a', p)
   | suc n', zero,   fsuc a' => absurd (fin-minus-helper (transport (\lam x => x `Le (n' + 0)) p (fin-bounded a')))
-  | suc n', suc m', fsuc a' => fin-minus a' (eq-unsuc p)
+  | suc n', suc m', fsuc a' => fin-minus (eq-unsuc p)
 
 \function fin-precise {n m : Nat} (p : n `Gt m) : \Sigma (c : Fin n) (m = to-nat c) => \elim n, m
   | zero, _ => absurd (suc_nle_zero p)
@@ -78,20 +78,17 @@
 \function plus-comm1 (n m : Nat) : suc (n + m) = n + suc m =>
   pmap suc (plus-comm n m) *> plus-comm (suc m) n
 
+\function lt-n-plus {n m : Nat} (p : n + m `Lt n) : Empty => \elim n, p
+  | suc n, le_ss s => lt-n-plus s
+
 \function nlt-ge {n m : Nat} (p : Not (n `Lt m)) : m `Le n => \elim n, m
   | zero, zero  => le_z
   | suc n, zero => le_z
   | zero, suc m => absurd (p (le_ss le_z))
   | suc n, suc m => le_ss (nlt-ge (\lam nltm => p (le_ss nltm)))
 
-\function lt-le {n m : Nat} (p : n `Lt m) : n `Le m => \elim n, m
-  | zero,  suc m => le_z
-  | suc n, suc m => le_ss (lt-le (Le_unsuc p))
-  | zero,  zero  => absurd (suc_nle_zero p)
-  | suc n, zero  => absurd (suc_nle_zero p)
-
 \function fin-partition-helper {n m : Nat} {a : Fin (n + m)} (d : Dec (to-nat a `Lt n)) : Either (Fin n) (Fin m) => \elim d
-  | inl p => inr (fin-minus a (Le-is-addition n (to-nat a) (nlt-ge p)).2).1
+  | inl p => inr (fin-minus (Le-is-addition n (to-nat a) (nlt-ge p)).2).1
   | inr p => inl (fin-precise p).1
 
 \function fin-partition {n m : Nat} (a : Fin (n + m)) : Either (Fin n) (Fin m) => fin-partition-helper (Lt-dec (to-nat a) n)
@@ -104,15 +101,30 @@
   | inl a => inl (a, idp)
   | inr a => inr (a, idp)
 
+\function fin-ext {n : Nat} {a b : Fin n} (pf : to-nat a = to-nat b) : a = b => \elim n, a, b
+  | suc n, fzero,  fzero  => idp
+  | suc n, fsuc a, fsuc b => pmap fsuc (fin-ext {n} {a} {b} (eq-unsuc pf))
+  | suc n, fzero,  fsuc b => absurd (zero-ne-suc pf)
+  | suc n, fsuc a, fzero  => absurd (zero-ne-suc (inv pf))
+
+\function unplus {n m o : Nat} (p : n + m = n + o) : m = o => \elim n
+  | zero => p
+  | suc n => unplus (eq-unsuc p)
+
 \function fin-partition-isSurj {n m : Nat} : isSurj (fin-partition {n} {m}) =>
   \lam b => inP (fin-departition b, inP (
     \case either-helper b \with {
       | inl p => transport (\lam c => (fin-partition (fin-departition c)) = c) (inv p.2) (
           \case either-helper (Lt-dec (to-nat (flift m p.1)) n) \with {
             | inl ct => absurd (ct.1 (transport (\lam tnt => tnt `Lt n) (flift-id m p.1) (fin-bounded p.1)))
-            | inr pf => pmap fin-partition-helper pf.2 *> pmap inl {?}
+            | inr pf => pmap fin-partition-helper pf.2 *> pmap inl (fin-ext (inv (flift-id m p.1 *> (fin-precise pf.1).2)))
           })
-      | inr p => {?}
+      | inr p => transport (\lam c => (fin-partition (fin-departition c)) = c) (inv p.2) (
+          \case either-helper (Lt-dec (to-nat (fadd n p.1)) n) \with {
+            | inl pf => pmap fin-partition-helper pf.2 *> pmap inr (fin-ext ((fin-minus (Le-is-addition n (to-nat (fadd n p.1)) (nlt-ge pf.1)).2).2 *>
+                inv (unplus (fadd-adds n p.1 *> (Le-is-addition n (to-nat (fadd n p.1)) (nlt-ge pf.1)).2)) ))
+            | inr ct => absurd (lt-n-plus (transport (\lam tnt => tnt `Lt n) (inv (fadd-adds n p.1)) ct.1))
+          })
     }
   ))
 
