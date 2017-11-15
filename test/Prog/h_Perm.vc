@@ -1,5 +1,6 @@
 \open ::Data::Nat::Base
 \open ::Prog::g_Bijection
+\open ::Prog::e_Surj
 \open ::Sets
 \open ::PropLogic
 \open ::Equiv
@@ -128,7 +129,6 @@
     }
   ))
 
-{-
 \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
   (permCompIsPerm f g ff.1 gf.1, (ff.2.1 + gf.2.1, \case ff.2.2 \with { inP Bf => \case gf.2.2 \with { inP Bg =>
     inP (\lam a => Bf.1 a ||| Bg.1 a, (\lam a => \case Bf.2.1 a \with { inP bfs => \case Bg.2.1 a \with { inP bgs =>
@@ -139,25 +139,23 @@
           | inr gp => inr (pmap g fp *> gp)
         }
       })
-    }}, \case Bf.2.2 \with { inP bffn => \case Bg.2.2 \with { inP bgfn => 
-      inP ((\lam a => \case cmp ff.2.1 (to-nat a) \with {
-        | tri_lt p _ _ => \let | ad => Le-is-addition (1 + ff.2.1) (to-nat a) p
-                               | arg => fin-minus ff.2.1 gf.2.1 (1 + ad.1) a (ad.2 *> plus-comm1 ff.2.1 ad.1)
-                               | res => bgfn.1 arg.1
-                           \in (res.1, inP (inr res.2))
-        | tri_eq _ p _ => \let | arg => fin-minus ff.2.1 gf.2.1 0 a (inv p *> plus-comm0 ff.2.1)
-                               | res => bgfn.1 arg.1
-                           \in (res.1, inP (inr res.2))
-        | tri_gt _ _ p => \let | arg => fin-precise ff.2.1 (to-nat a) p
-                               | res => bffn.1 arg.1
-                           \in (res.1, inP (inl res.2))
-      }), \lam a => \case a.2 \with {
-        | inP (inl p) => inP-map (\lam pf => {?}) (bffn.2 (a.1, p))
-        | inP (inr p) => inP-map (\lam pf => {?}) (bgfn.2 (a.1, p))
-      })
+    }}, \case Bf.2.2 \with { inP bffn => \case Bg.2.2 \with { inP bgfn =>
+      \let | fn : \Pi (Either (Fin ff.2.1) (Fin gf.2.1)) -> \Sigma (a : A) (Bf.1 a ||| Bg.1 a) =>
+                   \lam r => \case r \with {
+                               | inl c => \let b => bffn.1 c \in (b.1, inP (inl b.2))
+                               | inr c => \let b => bgfn.1 c \in (b.1, inP (inr b.2))
+                             }
+           | fnSurj : isSurj fn => \lam r => \case r.2 \with {
+                     | inP (inl c) => \case bffn.2 (r.1, c) \with {
+                         | inP p => inP (inl p.1, inP-map {?} p.2)
+                       }
+                     | inP (inr c) => \case bgfn.2 (r.1, c) \with {
+                         | inP p => inP (inr p.1, inP-map {?} p.2)
+                       }
+                   }
+       \in inP (fn `o fin-partition, compSurjIsSurj fin-partition fn {fin-partition-isSurj} {fnSurj})
     }}))
   }}))
--}
 
 \function finiteIdentity {A : \Set} : \Sigma (f : A -> A) (finitePerm f) =>
   (id, ((id, (idp, idp)), (0, inP ((\lam a => False), (\lam a => inP (inr idp), inP (\lam a => \case a \with {}, \lam b => \case b.2 \with {}))))))
