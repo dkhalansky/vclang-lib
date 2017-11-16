@@ -153,16 +153,23 @@
                          | inP p => inP (inl p.1, inP-map (\lam pf =>
                            \let pfdt => sigma-eq-ext (\lam a => Bf.1 a) {bffn.1 p.1} {(r.1, c.1)} pf
                             \in sigma-ext-eq (\lam a => Bf.1 a ||| Bg.1 a) {((bffn.1 p.1).1, inP (inl (bffn.1 p.1).2))} {r} (pfdt.1,
-                                inv (r2pf.2 *> pmap inP c.2 *> pmap (inP `o inl) (inv pfdt.2) *> inv {?}))
+                                inv (r2pf.2 *> pmap inP c.2 *> pmap (inP `o inl) (inv pfdt.2) *> inv (
+                                    TrP-isProp (Either (Bf.1 r.1) (Bg.1 r.1))
+                                        (coe (\lam (i : I) => Bf.1 (pf @ i).1 ||| Bg.1 (pf @ i).1) (inP (inl (bffn.1 p.1).2)) right)
+                                        (inP (inl (coe (\lam (i : I) => Bf.1 (pf @ i).1) (bffn.1 p.1).2 right)))
+                                )))
                          ) p.2)
                        }
                      | inr c => \case bgfn.2 (r.1, c.1) \with {
                          | inP p => inP (inr p.1, inP-map (\lam pf =>
                            \let pfdt => sigma-eq-ext (\lam a => Bg.1 a) {bgfn.1 p.1} {(r.1, c.1)} pf
                             \in sigma-ext-eq (\lam a => Bf.1 a ||| Bg.1 a) {((bgfn.1 p.1).1, inP (inr (bgfn.1 p.1).2))} {r} (pfdt.1,
-                                inv (r2pf.2 *> pmap inP c.2 *> pmap (inP `o inr) (inv pfdt.2) *> inv {?}))
-                         ) p.2)
---   coe (\lam i => Bf.1 (pf @ i).1 ||| Bg.1 (pf @ i).1) (inP (inr (bgfn.1 p.1).2)) right = r.2
+                                inv (r2pf.2 *> pmap inP c.2 *> pmap (inP `o inr) (inv pfdt.2) *> inv (
+                                    TrP-isProp (Either (Bf.1 r.1) (Bg.1 r.1))
+                                        (coe (\lam (i : I) => Bf.1 (pf @ i).1 ||| Bg.1 (pf @ i).1) (inP (inr (bgfn.1 p.1).2)) right)
+                                        (inP (inr (coe (\lam (i : I) => Bg.1 (pf @ i).1) (bgfn.1 p.1).2 right)))
+                                ))
+                         )) p.2)
                        }
                    } }
        \in inP (fn `o fin-partition, compSurjIsSurj fin-partition fn {fin-partition-isSurj} {fnSurj})
