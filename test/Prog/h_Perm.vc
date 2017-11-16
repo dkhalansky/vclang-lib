@@ -129,6 +129,9 @@
     }
   ))
 
+\function inP-helper {A : \Type} (p : TrP A) : TrP (\Sigma (a : A) (p = inP a)) => \elim p
+  | inP a => inP (a, idp)
+
 \function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
   (permCompIsPerm f g ff.1 gf.1, (ff.2.1 + gf.2.1, \case ff.2.2 \with { inP Bf => \case gf.2.2 \with { inP Bg =>
     inP (\lam a => Bf.1 a ||| Bg.1 a, (\lam a => \case Bf.2.1 a \with { inP bfs => \case Bg.2.1 a \with { inP bgs =>
@@ -142,17 +145,26 @@
     }}, \case Bf.2.2 \with { inP bffn => \case Bg.2.2 \with { inP bgfn =>
       \let | fn : \Pi (Either (Fin ff.2.1) (Fin gf.2.1)) -> \Sigma (a : A) (Bf.1 a ||| Bg.1 a) =>
                    \lam r => \case r \with {
-                               | inl c => \let b => bffn.1 c \in (b.1, inP (inl b.2))
-                               | inr c => \let b => bgfn.1 c \in (b.1, inP (inr b.2))
+                               | inl c => ((bffn.1 c).1, inP (inl (bffn.1 c).2))
+                               | inr c => ((bgfn.1 c).1, inP (inr (bgfn.1 c).2))
                              }
-           | fnSurj : isSurj fn => \lam r => \case r.2 \with {
-                     | inP (inl c) => \case bffn.2 (r.1, c) \with {
-                         | inP p => inP (inl p.1, inP-map {?} p.2)
+           | fnSurj : isSurj fn => \lam r => \case inP-helper r.2 \with { inP r2pf => \case either-helper r2pf.1 \with {
+                     | inl c => \case bffn.2 (r.1, c.1) \with {
+                         | inP p => inP (inl p.1, inP-map (\lam pf =>
+                           \let pfdt => sigma-eq-ext (\lam a => Bf.1 a) {bffn.1 p.1} {(r.1, c.1)} pf
+                            \in sigma-ext-eq (\lam a => Bf.1 a ||| Bg.1 a) {((bffn.1 p.1).1, inP (inl (bffn.1 p.1).2))} {r} (pfdt.1,
+                                inv (r2pf.2 *> pmap inP c.2 *> pmap (inP `o inl) (inv pfdt.2) *> inv {?}))
+                         ) p.2)
                        }
-                     | inP (inr c) => \case bgfn.2 (r.1, c) \with {
-                         | inP p => inP (inr p.1, inP-map {?} p.2)
+                     | inr c => \case bgfn.2 (r.1, c.1) \with {
+                         | inP p => inP (inr p.1, inP-map (\lam pf =>
+                           \let pfdt => sigma-eq-ext (\lam a => Bg.1 a) {bgfn.1 p.1} {(r.1, c.1)} pf
+                            \in sigma-ext-eq (\lam a => Bf.1 a ||| Bg.1 a) {((bgfn.1 p.1).1, inP (inr (bgfn.1 p.1).2))} {r} (pfdt.1,
+                                inv (r2pf.2 *> pmap inP c.2 *> pmap (inP `o inr) (inv pfdt.2) *> inv {?}))
+                         ) p.2)
+--   coe (\lam i => Bf.1 (pf @ i).1 ||| Bg.1 (pf @ i).1) (inP (inr (bgfn.1 p.1).2)) right = r.2
                        }
-                   }
+                   } }
        \in inP (fn `o fin-partition, compSurjIsSurj fin-partition fn {fin-partition-isSurj} {fnSurj})
     }}))
   }}))
