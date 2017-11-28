@@ -16,6 +16,12 @@
   | v, app a b => fresh_in_app (FreshIn v a) (FreshIn v b)
   | v, lam a b => fresh_in_lam (a != v) (FreshIn v b)
 
+\function fresh_inside_app {v : Nat} {a b : Lam} (p : v `FreshIn (app a b)) : (v `FreshIn a) && (v `FreshIn b) => \elim p
+  | fresh_in_app a b => (a, b)
+
+\function fresh_inside_lam {v : Nat} {a : Nat} {b : Lam} (p : v `FreshIn (lam a b)) : (a != v) && (v `FreshIn b) => \elim p
+  | fresh_in_lam a b => (a, b)
+
 \function dirty (v : Lam) : List Nat => \elim v
   | var a   => a :-: nil
   | app a b => dirty a ++ dirty b
@@ -94,15 +100,14 @@
   | app a b => suc (lam_ops a + lam_ops b)
   | lam v b => suc (lam_ops b)
 
-\function replace-nat (v n c : Nat) : Nat => \case v =? c \with {
-    | inl p => n
-    | inr q => c
-  }
+\function replace-nat {v c : Nat} (n : Nat) (d : Dec (v = c)) : Nat => \elim d
+  | inl p => c
+  | inr q => n
 
 \function replace (v n : Nat) (b : Lam) : Lam => \elim b
-  | var a => var (replace-nat v n a)
+  | var a => var (replace-nat n (v =? a))
   | app a b => app (replace v n a) (replace v n b)
-  | lam r b => lam (replace-nat v n r) (replace v n b)
+  | lam r b => lam (replace-nat n (v =? r)) (replace v n b)
 
 \function replace-preserves-structure (v n : Nat) (b : Lam) : lam_ops b = lam_ops (replace v n b) => \elim b
   | var a => idp
@@ -147,6 +152,36 @@
 
 \function AlphaSym : Symmetric Alpha => \lam a b p => sym_alpha a b p (lam_ops b) (le_refl (lam_ops b))
 
+\function replace-equiv-with-any-fresh (v v' n n' : Nat) (a b : Lam)
+          (pna  : n  `FreshIn a) (pnb  : n  `FreshIn b) (pna' : n' `FreshIn a) (pnb' : n' `FreshIn b)
+          (nnev : n != v) (nnev' : n != v') (nnnev : n' != v) (nnnev' : n' != v')
+          (p : replace v n a `Alpha replace v' n b) : replace v n' a `Alpha replace v' n' b => \elim a, b, p
+  | var a, var b, alpha_var p => alpha_var (\case either-helper (v =? a) \with {
+      | inl ane => \let pn => pmap (replace-nat n) (inv ane.2) *> p
+        \in \case either-helper (v' =? b) \with {
+              | inl bne => \let pnf => pmap (replace-nat n) (inv bne.2) *> inv pn
+                            \in pmap (replace-nat n') ane.2 *> inv (pmap (replace-nat n') bne.2 *> pnf)
+              | inr biq => \let pnf => pmap (replace-nat n) (inv biq.2) *> inv pn
+                            \in {?}
+            }
+      | inr aeq => {?}
+    })
+  | app aa ab, app ba bb, alpha_app pl pr => alpha_app
+    (replace-equiv-with-any-fresh v v' n n' aa ba
+        (fresh_inside_app pna).1
+        (fresh_inside_app pnb).1
+        (fresh_inside_app pna').1
+        (fresh_inside_app pnb').1
+        nnev nnev' nnnev nnnev' pl)
+    (replace-equiv-with-any-fresh v v' n n' ab bb
+        (fresh_inside_app pna ).2
+        (fresh_inside_app pnb ).2
+        (fresh_inside_app pna').2
+        (fresh_inside_app pnb').2
+        nnev nnev' nnnev nnnev' pr)
+  | lam aa ab, lam ba bb, alpha_lam f fa fb fp => {?}
+
+{-
 \function trans_alpha (a b c : Lam) (pab : Alpha a b) (pbc : Alpha b c) (n : Nat) (r : lam_ops b `Le n) : Alpha a c => \elim a, b, c, pab, pbc, n, r
   | var a, var b, var c, alpha_var pab, alpha_var pbc, zero,  le_z => alpha_var (pab *> pbc)
   | var a, var b, var c, alpha_var pab, alpha_var pbc, suc n, le_z => alpha_var (pab *> pbc)
@@ -154,4 +189,12 @@
     (trans_alpha aa ba ca paba pbca n (le-trans (plus_le_right (lam_ops bb) (lam_ops ba)) p))
     (trans_alpha ab bb cb pabb pbcb n (le-trans (plus_le_left  (lam_ops ba) (lam_ops bb)) p))
   | lam av ab, lam bv bb, lam cv cb, alpha_lam aba abfa abfb abgp, alpha_lam bca bcfb bcfc bcgp, suc n, le_ss p =>
-    alpha_lam {?} {?} {?} {?}
+    \let | inner_fake_term => (app (lam bv bb) (lam cv cb))
+         | fake_term => app (lam av ab) inner_fake_term
+         | f => fresh fake_term
+     \in alpha_lam (fresh fake_term)
+           (fresh_inside_app (fresh-is-fresh fake_term)).1
+           (fresh_inside_app (fresh_inside_app (fresh-is-fresh fake_term)).2).2
+           {?}
+           {?}
+-}
