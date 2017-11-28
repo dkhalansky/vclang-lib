@@ -146,3 +146,12 @@
         (transport (\lam x => Le x n) (replace-preserves-structure v' a b') p))
 
 \function AlphaSym : Symmetric Alpha => \lam a b p => sym_alpha a b p (lam_ops b) (le_refl (lam_ops b))
+
+\function trans_alpha (a b c : Lam) (pab : Alpha a b) (pbc : Alpha b c) (n : Nat) (r : lam_ops b `Le n) : Alpha a c => \elim a, b, c, pab, pbc, n, r
+  | var a, var b, var c, alpha_var pab, alpha_var pbc, zero,  le_z => alpha_var (pab *> pbc)
+  | var a, var b, var c, alpha_var pab, alpha_var pbc, suc n, le_z => alpha_var (pab *> pbc)
+  | app aa ab, app ba bb, app ca cb, alpha_app paba pabb, alpha_app pbca pbcb, suc n, le_ss p => alpha_app
+    (trans_alpha aa ba ca paba pbca n (le-trans (plus_le_right (lam_ops bb) (lam_ops ba)) p))
+    (trans_alpha ab bb cb pabb pbcb n (le-trans (plus_le_left  (lam_ops ba) (lam_ops bb)) p))
+  | lam av ab, lam bv bb, lam cv cb, alpha_lam aba abfa abfb abgp, alpha_lam bca bcfb bcfc bcgp, suc n, le_ss p =>
+    alpha_lam {?} {?} {?} {?}
