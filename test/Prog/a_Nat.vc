@@ -1,4 +1,4 @@
-\open ::Paths
+\import Paths
 
 \function plus (a b : Nat) : Nat => \elim a
   | zero  => b

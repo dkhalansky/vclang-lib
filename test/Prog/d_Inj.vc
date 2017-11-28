@@ -1,5 +1,5 @@
-\open ::Paths
-\open ::Combinators
+\import Paths
+\import Combinators
 
 \function isInj {A B : \Set} (f : A -> B) : \Prop =>
   \Pi (a1 a2 : A) -> f a1 = f a2 -> a1 = a2

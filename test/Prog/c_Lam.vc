@@ -1,6 +1,6 @@
-\open ::Paths
-\open ::Data::Bool
-\open ::Data::List \hiding (concat)
+\import Paths
+\import Data.Bool
+\import Data.List \hiding (concat)
 
 \data Lam 
   | var Nat
@@ -20,14 +20,14 @@
 \function merge (a b : List Nat) : List Nat => \elim a, b
   | a, nil => a
   | nil, b => b
-  | `:-: a as, `:-: b bs => if (blt a b)
+  | :-: a as, :-: b bs => if (blt a b)
                              (a :-: merge as (b :-: bs))
                              (b :-: merge (a :-: as) bs)
 
 \function uniq (a : List Nat) : List Nat => \elim a
   | nil => nil
-  | `:-: a nil => a :-: nil
-  | `:-: a (`:-: b as) => if (beq a b)
+  | :-: a nil => a :-: nil
+  | :-: a (:-: b as) => if (beq a b)
                              (uniq (b :-: as))
                              (a :-: uniq (b :-: as))
 

@@ -1,14 +1,12 @@
-\open ::Paths
-\open ::Sets
-\open ::PropLogic
+\import Paths
+\import Sets
+\import PropLogic
 
 \function propMap {A B : \Type} (f : A -> B) (a : TrP A) : TrP B => \elim a
   | inP a => inP (f a)
 
 \function compSurjIsSurj {A B C : \Set} (f : A -> B) (g : B -> C) {fs : isSurj f} {gs : isSurj g} : isSurj (\lam x => g (f x)) =>
-  \lam c => \case gs c \with { inP b => \case fs b.1 \with { inP a =>
-            \case b.2 \with { inP bpf => \case a.2 \with { inP apf =>
-            inP (a.1, inP (pmap g apf >== bpf)) } } } }
+  \lam c => \case gs c \with { inP b => \case fs b.1 \with { inP a => inP (a.1, pmap g a.2 >== b.2) } }
 
 \function surjFromComp {A B C : \Set} (f : A -> B) (g : B -> C) {gfs : isSurj (\lam x => g (f x))} : isSurj g =>
   \lam c => \case gfs c \with { inP a => inP (f a.1, a.2) }

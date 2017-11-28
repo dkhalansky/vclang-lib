@@ -1,5 +1,5 @@
-\open ::Paths
-\open ::Data::Int
+\import Paths
+\import Data.Int
 
 \function iPlusZero (a : Int) : a +$ zeroZ = a => \elim a
   | pos zero => idp

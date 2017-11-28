@@ -1,25 +1,25 @@
-\open ::Data::Nat::Base
-\open ::Data::Nat::Properties
-\open ::Data::Nat::Compare
-\open ::Data::Either
-\open ::Paths
-\open ::Prog::c_Lam
-\open ::Prog::h_Perm
-\open ::Logic
-\open ::Relation
-\open ::Data::List \hiding (concat)
-\open ::Data::List::In
-\open ::Data::Empty
+\import Data.Nat.Base
+\import Data.Nat.Properties
+\import Data.Nat.Compare
+\import Data.Either
+\import Paths
+\import Prog.c_Lam
+\import Prog.h_Perm
+\import Logic
+\import Relation
+\import Data.List \hiding (concat)
+\import Data.List.In
+\import Data.Empty
 
-\data FreshIn (v : Nat) (b : Lam) \with
+\data \infixr 5 FreshIn (v : Nat) (b : Lam) \with
   | v, var a => fresh_in_var (a != v)
   | v, app a b => fresh_in_app (FreshIn v a) (FreshIn v b)
   | v, lam a b => fresh_in_lam (a != v) (FreshIn v b)
 
-\function fresh_inside_app {v : Nat} {a b : Lam} (p : v `FreshIn (app a b)) : (v `FreshIn a) && (v `FreshIn b) => \elim p
+\function fresh_inside_app {v : Nat} {a b : Lam} (p : v FreshIn (app a b)) : (v FreshIn a) && (v FreshIn b) => \elim p
   | fresh_in_app a b => (a, b)
 
-\function fresh_inside_lam {v : Nat} {a : Nat} {b : Lam} (p : v `FreshIn (lam a b)) : (a != v) && (v `FreshIn b) => \elim p
+\function fresh_inside_lam {v : Nat} {a : Nat} {b : Lam} (p : v FreshIn (lam a b)) : (a != v) && (v FreshIn b) => \elim p
   | fresh_in_lam a b => (a, b)
 
 \function dirty (v : Lam) : List Nat => \elim v
@@ -27,8 +27,7 @@
   | app a b => dirty a ++ dirty b
   | lam v b => v :-: dirty b
 
-\function not-dirty-is-fresh (v : Lam) (n : Nat)
-  (clean : Not (n `AppearsIn dirty v)) : n `FreshIn v => \elim v
+\function not-dirty-is-fresh (v : Lam) (n : Nat) (clean : Not (AppearsIn n (dirty v))) : n FreshIn v => \elim v
   | var a => fresh_in_var (\lam eq => clean (here (inv eq)))
   | app a b => fresh_in_app
       (not-dirty-is-fresh a n (\lam x => clean (appears-in-append-right x (dirty b))))
@@ -41,28 +40,28 @@
   | app a b => fresh a + fresh b
   | lam v b => suc (v + fresh b)
 
-\function not-appears-in-nil {A : \Type} {a : A} (v : a `AppearsIn nil) : Empty => \elim v
+\function not-appears-in-nil {A : \Type} {a : A} (v : AppearsIn a nil) : Empty => \elim v
 
 \function suc-a-ne-a (a : Nat) : suc a != a => \elim a
   | zero  => \lam ctr => zero-ne-suc (inv ctr)
   | suc a => \lam ctr => (suc-a-ne-a a) (eq-unsuc ctr)
 
-\function le_refl (a : Nat) : a `Le a => \elim a
+\function le_refl (a : Nat) : a Le a => \elim a
   | zero => le_z
   | suc a => le_ss (le_refl a)
 
-\function le_suc {n m : Nat} (p : n `Le m) : (n `Le suc m) => \elim n, m, p
+\function le_suc {n m : Nat} (p : n Le m) : (n Le suc m) => \elim n, m, p
   | zero, m, le_z => le_z
   | suc n, suc m, le_ss p => le_ss (le_suc p)
 
-\function le_plus_left (n m : Nat) : (m `Le n + m) => \elim n
+\function le_plus_left (n m : Nat) : (m Le n + m) => \elim n
   | zero => le_refl m
   | suc n => le_suc (le_plus_left n m)
 
-\function le_plus_right (m n : Nat) : (m `Le m + n) =>
-  transport (\lam x => m `Le x) (plus-comm n m) (le_plus_left n m)
+\function le_plus_right (m n : Nat) : (m Le m + n) =>
+  transport (\lam x => m Le x) (plus-comm n m) (le_plus_left n m)
 
-\function fresh-larger-than-dirty (v : Lam) (c : Nat) (cd : c `AppearsIn dirty v) : fresh v `Gt c => \elim v
+\function fresh-larger-than-dirty (v : Lam) (c : Nat) (cd : AppearsIn c (dirty v)) : fresh v `Gt c => \elim v
   | var a => \case cd \with {
       | here h => transport (\lam x => Lt x (suc a)) (inv h) (le_refl (suc a))
       | there t => absurd (not-appears-in-nil t)
@@ -76,7 +75,7 @@
       | there t => le-trans (fresh-larger-than-dirty b c t) (le_plus_left (suc v) (fresh b))
     }
 
-\function le-ngt {n m : Nat} (p : m `Le n) : Not (m `Gt n) => \elim n, m, p
+\function le-ngt {n m : Nat} (p : m Le n) : Not (m `Gt n) => \elim n, m, p
   | _, zero, le_z => \lam q => suc_nle_zero q
   | suc n, suc m, le_ss p => \lam q => (le-ngt p) (Le_unsuc q)
 
@@ -84,10 +83,10 @@
   \lam ctr => (le-ngt p) (le_ss (transport (\lam x => Le n x) ctr (le_refl n)))
 
 \function not_appears_different_from_all {A : \Type} {v : List A} (e : A)
-    (ctr : \Pi (a : A) -> (\Pi (c : a `AppearsIn v) -> (e != a)))
-    (p : e `AppearsIn v) : Empty => \elim v, p
-  | `:-: x xs, here h  => ctr x (here idp) h
-  | `:-: x xs, there t => not_appears_different_from_all e
+    (ctr : \Pi (a : A) -> (\Pi (c : AppearsIn a v) -> (e != a)))
+    (p : AppearsIn e v) : Empty => \elim v, p
+  | :-: x xs, here h  => ctr x (here idp) h
+  | :-: x xs, there t => not_appears_different_from_all e
       (\lam a p => ctr a (there p)) t
 
 \function fresh-is-fresh (v : Lam) : FreshIn (fresh v) v =>
@@ -111,24 +110,24 @@
 
 \function replace-preserves-structure (v n : Nat) (b : Lam) : lam_ops b = lam_ops (replace v n b) => \elim b
   | var a => idp
-  | app a b => pmap suc (pmap2 `+ (replace-preserves-structure v n a) (replace-preserves-structure v n b))
+  | app a b => pmap suc (pmap2 (+) (replace-preserves-structure v n a) (replace-preserves-structure v n b))
   | lam r b => pmap suc (replace-preserves-structure v n b)
 
 \data Alpha (a b : Lam) \with
   | var a, var b => alpha_var (a = b)
   | app a b, app a' b' => alpha_app (Alpha a a') (Alpha b b')
   | lam v b, lam v' b' => alpha_lam (a : Nat)
-        (a `FreshIn (lam v b)) (a `FreshIn (lam v' b'))
+        (a FreshIn (lam v b)) (a FreshIn (lam v' b'))
         (Alpha (replace v a b) (replace v' a b'))
 
-\function plus_le_right (n m : Nat) : m `Le (m + n) => \elim m
+\function plus_le_right (n m : Nat) : m Le (m + n) => \elim m
   | zero  => le_z
   | suc m => le_ss (plus_le_right n m)
 
-\function plus_le_left (n m : Nat) : m `Le (n + m) =>
-  transport (\lam x => m `Le x) (plus-comm m n) (plus_le_right n m)
+\function plus_le_left (n m : Nat) : m Le (n + m) =>
+  transport (\lam x => m Le x) (plus-comm m n) (plus_le_right n m)
 
-\function alpha_refl (b : Lam) (n : Nat) (p : lam_ops b `Le n) : Alpha b b => \elim b, n, p
+\function alpha_refl (b : Lam) (n : Nat) (p : lam_ops b Le n) : Alpha b b => \elim b, n, p
   | var a, zero, le_z  => alpha_var idp
   | var a, suc n, le_z => alpha_var idp
   | app a b, suc n, le_ss p => alpha_app
@@ -140,7 +139,7 @@
 
 \function AlphaRefl : Reflexive Alpha => \lam b => alpha_refl b (lam_ops b) (le_refl (lam_ops b))
 
-\function sym_alpha (a b : Lam) (p : Alpha a b) (n : Nat) (r : lam_ops b `Le n) : Alpha b a => \elim a, b, p, n, r
+\function sym_alpha (a b : Lam) (p : Alpha a b) (n : Nat) (r : lam_ops b Le n) : Alpha b a => \elim a, b, p, n, r
   | var a, var b, alpha_var p, zero, le_z => alpha_var (inv p)
   | var a, var b, alpha_var p, suc n, le_z => alpha_var (inv p)
   | app a b, app a' b', alpha_app ap bp, suc n, le_ss p =>
@@ -153,9 +152,9 @@
 \function AlphaSym : Symmetric Alpha => \lam a b p => sym_alpha a b p (lam_ops b) (le_refl (lam_ops b))
 
 \function replace-equiv-with-any-fresh (v v' n n' : Nat) (a b : Lam)
-          (pna  : n  `FreshIn a) (pnb  : n  `FreshIn b) (pna' : n' `FreshIn a) (pnb' : n' `FreshIn b)
+          (pna  : n  FreshIn a) (pnb  : n  FreshIn b) (pna' : n' FreshIn a) (pnb' : n' FreshIn b)
           (nnev : n != v) (nnev' : n != v') (nnnev : n' != v) (nnnev' : n' != v')
-          (p : replace v n a `Alpha replace v' n b) : replace v n' a `Alpha replace v' n' b => \elim a, b, p
+          (p : Alpha (replace v n a) (replace v' n b)) : Alpha (replace v n' a) (replace v' n' b) => \elim a, b, p
   | var a, var b, alpha_var p => alpha_var (\case either-helper (v =? a) \with {
       | inl ane => \let pn => pmap (replace-nat n) (inv ane.2) *> p
         \in \case either-helper (v' =? b) \with {
@@ -182,7 +181,7 @@
   | lam aa ab, lam ba bb, alpha_lam f fa fb fp => {?}
 
 {-
-\function trans_alpha (a b c : Lam) (pab : Alpha a b) (pbc : Alpha b c) (n : Nat) (r : lam_ops b `Le n) : Alpha a c => \elim a, b, c, pab, pbc, n, r
+\function trans_alpha (a b c : Lam) (pab : Alpha a b) (pbc : Alpha b c) (n : Nat) (r : lam_ops b Le n) : Alpha a c => \elim a, b, c, pab, pbc, n, r
   | var a, var b, var c, alpha_var pab, alpha_var pbc, zero,  le_z => alpha_var (pab *> pbc)
   | var a, var b, var c, alpha_var pab, alpha_var pbc, suc n, le_z => alpha_var (pab *> pbc)
   | app aa ab, app ba bb, app ca cb, alpha_app paba pabb, alpha_app pbca pbcb, suc n, le_ss p => alpha_app

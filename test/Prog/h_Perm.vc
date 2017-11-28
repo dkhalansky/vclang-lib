@@ -1,22 +1,22 @@
-\open ::Data::Nat::Base
-\open ::Prog::g_Bijection
-\open ::Prog::e_Surj
-\open ::Sets
-\open ::PropLogic
-\open ::Equiv
-\open ::Combinators
-\open ::Paths
-\open ::Hlevel
-\open ::Data::Fin
-\open ::Data::Fin::Properties
-\open ::Data::Either
-\open ::Data::Nat::Compare
-\open ::Data::Nat::Properties
-\open ::Relation
-\open ::Data::Empty
-\open ::Data::Unit
-\open ::Data::Bool
-\open ::Logic
+\import Data.Nat.Base
+\import Prog.g_Bijection
+\import Prog.e_Surj
+\import Sets
+\import PropLogic
+\import Equiv
+\import Combinators
+\import Paths
+\import Hlevel
+\import Data.Fin
+\import Data.Fin.Properties
+\import Data.Either
+\import Data.Nat.Compare
+\import Data.Nat.Properties
+\import Relation
+\import Data.Empty
+\import Data.Unit
+\import Data.Bool
+\import Logic
 
 -- Permutation group
 
@@ -113,7 +113,7 @@
   | suc n => unplus (eq-unsuc p)
 
 \function fin-partition-isSurj {n m : Nat} : isSurj (fin-partition {n} {m}) =>
-  \lam b => inP (fin-departition b, inP (
+  \lam b => inP (fin-departition b, (
     \case either-helper b \with {
       | inl p => transport (\lam c => (fin-partition (fin-departition c)) = c) (inv p.2) (
           \case either-helper (Lt-dec (to-nat (flift m p.1)) n) \with {
@@ -150,26 +150,25 @@
                              }
            | fnSurj : isSurj fn => \lam r => \case inP-helper r.2 \with { inP r2pf => \case either-helper r2pf.1 \with {
                      | inl c => \case bffn.2 (r.1, c.1) \with {
-                         | inP p => inP (inl p.1, inP-map (\lam pf =>
-                           \let pfdt => sigma-eq-ext (\lam a => Bf.1 a) {bffn.1 p.1} {(r.1, c.1)} pf
+                         | inP p => inP (inl p.1,
+                           \let pfdt => sigma-eq-ext (\lam a => Bf.1 a) {bffn.1 p.1} {(r.1, c.1)} p.2
                             \in sigma-ext-eq (\lam a => Bf.1 a ||| Bg.1 a) {((bffn.1 p.1).1, inP (inl (bffn.1 p.1).2))} {r} (pfdt.1,
                                 inv (r2pf.2 *> pmap inP c.2 *> pmap (inP `o inl) (inv pfdt.2) *> inv (
                                     TrP-isProp (Either (Bf.1 r.1) (Bg.1 r.1))
-                                        (coe (\lam (i : I) => Bf.1 (pf @ i).1 ||| Bg.1 (pf @ i).1) (inP (inl (bffn.1 p.1).2)) right)
-                                        (inP (inl (coe (\lam (i : I) => Bf.1 (pf @ i).1) (bffn.1 p.1).2 right)))
-                                )))
-                         ) p.2)
+                                        (coe (\lam (i : I) => Bf.1 (p.2 @ i).1 ||| Bg.1 (p.2 @ i).1) (inP (inl (bffn.1 p.1).2)) right)
+                                        (inP (inl (coe (\lam (i : I) => Bf.1 (p.2 @ i).1) (bffn.1 p.1).2 right)))
+                                ))))
                        }
                      | inr c => \case bgfn.2 (r.1, c.1) \with {
-                         | inP p => inP (inr p.1, inP-map (\lam pf =>
-                           \let pfdt => sigma-eq-ext (\lam a => Bg.1 a) {bgfn.1 p.1} {(r.1, c.1)} pf
+                         | inP p => inP (inr p.1, 
+                           \let pfdt => sigma-eq-ext (\lam a => Bg.1 a) {bgfn.1 p.1} {(r.1, c.1)} p.2
                             \in sigma-ext-eq (\lam a => Bf.1 a ||| Bg.1 a) {((bgfn.1 p.1).1, inP (inr (bgfn.1 p.1).2))} {r} (pfdt.1,
                                 inv (r2pf.2 *> pmap inP c.2 *> pmap (inP `o inr) (inv pfdt.2) *> inv (
                                     TrP-isProp (Either (Bf.1 r.1) (Bg.1 r.1))
-                                        (coe (\lam (i : I) => Bf.1 (pf @ i).1 ||| Bg.1 (pf @ i).1) (inP (inr (bgfn.1 p.1).2)) right)
-                                        (inP (inr (coe (\lam (i : I) => Bg.1 (pf @ i).1) (bgfn.1 p.1).2 right)))
+                                        (coe (\lam (i : I) => Bf.1 (p.2 @ i).1 ||| Bg.1 (p.2 @ i).1) (inP (inr (bgfn.1 p.1).2)) right)
+                                        (inP (inr (coe (\lam (i : I) => Bg.1 (p.2 @ i).1) (bgfn.1 p.1).2 right)))
                                 ))
-                         )) p.2)
+                         ))
                        }
                    } }
        \in inP (fn `o fin-partition, compSurjIsSurj fin-partition fn {fin-partition-isSurj} {fnSurj})

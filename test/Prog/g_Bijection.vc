@@ -1,18 +1,18 @@
-\open ::Prog::d_Inj
-\open ::Prog::e_Surj
-\open ::Sets
-\open ::PropLogic
-\open ::Equiv
-\open ::Combinators
-\open ::Paths
-\open ::Hlevel
+\import Prog.d_Inj
+\import Prog.e_Surj
+\import Sets
+\import PropLogic
+\import Equiv
+\import Combinators
+\import Paths
+\import Hlevel
 
 \function isBij {A B : \Set} (f : A -> B) : \Set =>
-  \Sigma (g : B -> A) ((f `o g = id) &&& (g `o f = id))
+  \Sigma (g : B -> A) ((f o g = id) &&& (g o f = id))
 
 \function bijIsSurjAndInj {A B : \Set} (f : A -> B) (bij : isBij f) : (isSurj f &&& isInj f) =>
   (
-    \lam b => inP (bij.1 b, inP (fun-ext-inv bij.2.1 b))
+    \lam b => inP (bij.1 b, fun-ext-inv bij.2.1 b)
   ,
     \lam a1 a2 req => inv (fun-ext-inv bij.2.2 a1) >== pmap bij.1 req >== fun-ext-inv bij.2.2 a2
   )
@@ -30,12 +30,12 @@
   | truncP p1 p2 i => (P (inP-inv-enhanced P p1) (inP-inv-enhanced P p2)) @ i
 
 \function surjAndInjIsBij {A B : \Set} (f : A -> B) (inj : isInj f) (surj : isSurj f) : isBij f =>
-  \let g => \lam b => (inP-inv-enhanced (isInjSynonym {A} {B} {f} inj b) (surj b))
+  \let g => \lam b => inP-inv-enhanced (isInjSynonym {A} {B} {f} inj b) (\case surj b \with { inP p => inP (p.1, inP p.2) })
    \in (\lam b => (g b).1,
      (fun-ext (\lam b => inP-inv (f (g b).1 = b) (g b).2),
       fun-ext (\lam a => inj (g (f a)).1 a (inP-inv (f (g (f a)).1 = f a) (g (f a)).2))))
 
-\function bijCompIsBij {A B C : \Set} (f : A -> B) (g : B -> C) (fb : isBij f) (gb : isBij g) : isBij (g `o f) =>
-  \let isInj  : isInj  (g `o f) => compInjIsInj   f g {(bijIsSurjAndInj f fb).2} {(bijIsSurjAndInj g gb).2}
-     | isSurj : isSurj (g `o f) => compSurjIsSurj f g {(bijIsSurjAndInj f fb).1} {(bijIsSurjAndInj g gb).1}
-   \in surjAndInjIsBij (g `o f) isInj isSurj
+\function bijCompIsBij {A B C : \Set} (f : A -> B) (g : B -> C) (fb : isBij f) (gb : isBij g) : isBij (g o f) =>
+  \let isInj  : isInj  (g o f) => compInjIsInj   f g {(bijIsSurjAndInj f fb).2} {(bijIsSurjAndInj g gb).2}
+     | isSurj : isSurj (g o f) => compSurjIsSurj f g {(bijIsSurjAndInj f fb).1} {(bijIsSurjAndInj g gb).1}
+   \in surjAndInjIsBij (g o f) isInj isSurj
