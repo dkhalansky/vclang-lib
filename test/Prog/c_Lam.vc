@@ -7,37 +7,37 @@
   | app Lam Lam
   | lam Nat Lam
 
-\function beq (a b : Nat) : Bool => \elim a, b
+\func beq (a b : Nat) : Bool \elim a, b
   | zero,  zero  => true
   | suc a, suc b => beq a b
   | a,     b     => false
 
-\function blt (a b : Nat) : Bool => \elim a, b
+\func blt (a b : Nat) : Bool \elim a, b
   | zero,  suc b => true
   | suc a, suc b => blt a b
   | a,     b     => false
 
-\function merge (a b : List Nat) : List Nat => \elim a, b
+\func merge (a b : List Nat) : List Nat \elim a, b
   | a, nil => a
   | nil, b => b
   | :-: a as, :-: b bs => if (blt a b)
                              (a :-: merge as (b :-: bs))
                              (b :-: merge (a :-: as) bs)
 
-\function uniq (a : List Nat) : List Nat => \elim a
+\func uniq (a : List Nat) : List Nat \elim a
   | nil => nil
   | :-: a nil => a :-: nil
   | :-: a (:-: b as) => if (beq a b)
                              (uniq (b :-: as))
                              (a :-: uniq (b :-: as))
 
-\function free_vars (a : Lam) : List Nat => \elim a
+\func free_vars (a : Lam) : List Nat \elim a
   | var n => n :-: nil
   | app a b => merge (free_vars a) (free_vars b)
   | lam x a => filter (\lam v => not (beq x v)) (free_vars a)
 
-\function free_vars_cnt (a : Lam) : Nat => length (uniq (free_vars a))
+\func free_vars_cnt (a : Lam) : Nat => length (uniq (free_vars a))
 
-\function test_free_vars_cnt : free_vars_cnt
+\func test_free_vars_cnt : free_vars_cnt
   (lam 1 (app (var 1) (app (app (var 2) (var 3)) (var 3)))) = 2
 => idp

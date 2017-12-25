@@ -5,7 +5,7 @@
 \import PropLogic
 \import Sets
 
-\function everyFuncSurjInjComp {A B : \Set} (f : A -> B) :
+\func everyFuncSurjInjComp {A B : \Set} (f : A -> B) :
   \Sigma (S : \Set) (\Sigma (a : A -> S) (\Sigma (b : S -> B) (\Sigma (bi : isInj b) (\Sigma (as : isSurj a) (f = b o a))))) =>
   \let | nf : A -> im f => \lam a => (f a, inP (a, inP idp))
        | nb : im f -> B => \lam b => b.1

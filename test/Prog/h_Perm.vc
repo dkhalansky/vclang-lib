@@ -20,49 +20,49 @@
 
 -- Permutation group
 
-\function isPerm {A : \Set} (f : A -> A) : \Set => isBij f
+\func isPerm {A : \Set} (f : A -> A) : \Set => isBij f
 
-\function permCompIsPerm {A : \Set} (f : A -> A) (g : A -> A) (fp : isPerm f) (gp : isPerm g) : isPerm (g `o f) => bijCompIsBij f g fp gp
+\func permCompIsPerm {A : \Set} (f : A -> A) (g : A -> A) (fp : isPerm f) (gp : isPerm g) : isPerm (g `o f) => bijCompIsBij f g fp gp
 
-\function permIdentity {A : \Set} : \Sigma (f : A -> A) (isBij f) => (id, (id, (idp, idp)))
+\func permIdentity {A : \Set} : \Sigma (f : A -> A) (isBij f) => (id, (id, (idp, idp)))
 
-\function permInverse {A : \Set} (f : A -> A) (fp : isPerm f) : \Sigma (g : A -> A) (isPerm g) => (fp.1, (f, (fp.2.2, fp.2.1)))
+\func permInverse {A : \Set} (f : A -> A) (fp : isPerm f) : \Sigma (g : A -> A) (isPerm g) => (fp.1, (f, (fp.2.2, fp.2.1)))
 
 -- Finiteness
 
-\function subsetIsFinite {A : \Set} (B : A -> \Prop) (n : Nat) : \Prop => exists (\lam (f : Fin n -> (\Sigma (a : A) (B a))) => isSurj f)
+\func subsetIsFinite {A : \Set} (B : A -> \Prop) (n : Nat) : \Prop => exists (\lam (f : Fin n -> (\Sigma (a : A) (B a))) => isSurj f)
 
-\function isPermSupport {A : \Set} (f : A -> A) (B : A -> \Prop) : \Prop => \Pi (a : A) -> B a ||| (f a = a)
+\func isPermSupport {A : \Set} (f : A -> A) (B : A -> \Prop) : \Prop => \Pi (a : A) -> B a ||| (f a = a)
 
 -- Finite permutation group
 
-\function finitePerm {A : \Set} (f : A -> A) : \Set => \Sigma (isPerm f) (\Sigma (n : Nat) (exists (\lam B => isPermSupport f B &&& subsetIsFinite B n)))
+\func finitePerm {A : \Set} (f : A -> A) : \Set => \Sigma (isPerm f) (\Sigma (n : Nat) (exists (\lam B => isPermSupport f B &&& subsetIsFinite B n)))
 
-\function Le-is-addition (a b : Nat) (g : a `Le b) : \Sigma (c : Nat) (b = a + c) => \elim a, b, g
+\func Le-is-addition (a b : Nat) (g : a `Le b) : \Sigma (c : Nat) (b = a + c) \elim a, b, g
   | zero, b, _ => (b, idp)
   | suc a, suc b, le_ss p => \let res => Le-is-addition a b p \in (res.1, pmap suc res.2)
 
-\function plus-minus-inv (a b : Nat) : b + a - b = a => \elim b
+\func plus-minus-inv (a b : Nat) : b + a - b = a \elim b
   | zero => idp
   | suc b' => pred-suc-minus (b' + a) b' *> plus-minus-inv a b'
 
-\function pred-suc-inv (n : Nat) : pred (suc n) = n => \elim n
+\func pred-suc-inv (n : Nat) : pred (suc n) = n \elim n
   | zero => idp
   | suc n' => idp
 
-\function eq-unsuc {a b : Nat} (p : suc a = suc b) : a = b => inv (pred-suc-inv a) *> pmap pred p *> pred-suc-inv b
+\func eq-unsuc {a b : Nat} (p : suc a = suc b) : a = b => inv (pred-suc-inv a) *> pmap pred p *> pred-suc-inv b
 
-\function minus-remove-suc {n m : Nat} : (suc n - suc m = n - m) => pred-suc-minus n m
+\func minus-remove-suc {n m : Nat} : (suc n - suc m = n - m) => pred-suc-minus n m
 
-\function fin-bounded {n : Nat} (fn : Fin n) : to-nat fn `Lt n => \elim n, fn
+\func fin-bounded {n : Nat} (fn : Fin n) : to-nat fn `Lt n \elim n, fn
   | suc n', fzero => le_ss le_z
   | suc n', fsuc fn' => le_ss (fin-bounded fn')
 
-\function fin-minus-helper {n o : Nat} (p : (n + o) `Lt (n + 0)) : Empty => \elim n
+\func fin-minus-helper {n o : Nat} (p : (n + o) `Lt (n + 0)) : Empty \elim n
   | zero => suc_nle_zero p
   | suc n => fin-minus-helper (Le_unsuc p)
 
-\function fin-minus {n m o : Nat} {a : Fin (n + m)} (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) => \elim n, m, a
+\func fin-minus {n m o : Nat} {a : Fin (n + m)} (p : to-nat a = n + o) : \Sigma (c : Fin m) (to-nat c = o) \elim n, m, a
   | zero,   suc m', fzero => (fzero {m'}, p)
   | suc n', zero,   fzero => absurd (zero-ne-suc p)
   | suc n', suc m', fzero => absurd (zero-ne-suc p)
@@ -70,49 +70,49 @@
   | suc n', zero,   fsuc a' => absurd (fin-minus-helper (transport (\lam x => x `Le (n' + 0)) p (fin-bounded a')))
   | suc n', suc m', fsuc a' => fin-minus (eq-unsuc p)
 
-\function fin-precise {n m : Nat} (p : n `Gt m) : \Sigma (c : Fin n) (m = to-nat c) => \elim n, m
+\func fin-precise {n m : Nat} (p : n `Gt m) : \Sigma (c : Fin n) (m = to-nat c) \elim n, m
   | zero, _ => absurd (suc_nle_zero p)
   | suc n, zero  => (fzero, idp)
   | suc n, suc m => \let z => fin-precise (Le_unsuc p)
                      \in (fsuc z.1, pmap suc z.2)
 
-\function plus-comm1 (n m : Nat) : suc (n + m) = n + suc m =>
+\func plus-comm1 (n m : Nat) : suc (n + m) = n + suc m =>
   pmap suc (plus-comm n m) *> plus-comm (suc m) n
 
-\function lt-n-plus {n m : Nat} (p : n + m `Lt n) : Empty => \elim n, p
+\func lt-n-plus {n m : Nat} (p : n + m `Lt n) : Empty \elim n, p
   | suc n, le_ss s => lt-n-plus s
 
-\function nlt-ge {n m : Nat} (p : Not (n `Lt m)) : m `Le n => \elim n, m
+\func nlt-ge {n m : Nat} (p : Not (n `Lt m)) : m `Le n \elim n, m
   | zero, zero  => le_z
   | suc n, zero => le_z
   | zero, suc m => absurd (p (le_ss le_z))
   | suc n, suc m => le_ss (nlt-ge (\lam nltm => p (le_ss nltm)))
 
-\function fin-partition-helper {n m : Nat} {a : Fin (n + m)} (d : Dec (to-nat a `Lt n)) : Either (Fin n) (Fin m) => \elim d
+\func fin-partition-helper {n m : Nat} {a : Fin (n + m)} (d : Dec (to-nat a `Lt n)) : Either (Fin n) (Fin m) \elim d
   | inl p => inr (fin-minus (Le-is-addition n (to-nat a) (nlt-ge p)).2).1
   | inr p => inl (fin-precise p).1
 
-\function fin-partition {n m : Nat} (a : Fin (n + m)) : Either (Fin n) (Fin m) => fin-partition-helper (Lt-dec (to-nat a) n)
+\func fin-partition {n m : Nat} (a : Fin (n + m)) : Either (Fin n) (Fin m) => fin-partition-helper (Lt-dec (to-nat a) n)
 
-\function fin-departition {n m : Nat} (a : Either (Fin n) (Fin m)) : Fin (n + m) => \elim a
+\func fin-departition {n m : Nat} (a : Either (Fin n) (Fin m)) : Fin (n + m) \elim a
   | inl p => flift m p
   | inr p => fadd n p
 
-\function either-helper {A B : \Type} (d : Either A B) : Either (\Sigma (a : A) (d = inl a)) (\Sigma (b : B) (d = inr b)) => \elim d
+\func either-helper {A B : \Type} (d : Either A B) : Either (\Sigma (a : A) (d = inl a)) (\Sigma (b : B) (d = inr b)) \elim d
   | inl a => inl (a, idp)
   | inr a => inr (a, idp)
 
-\function fin-ext {n : Nat} {a b : Fin n} (pf : to-nat a = to-nat b) : a = b => \elim n, a, b
+\func fin-ext {n : Nat} {a b : Fin n} (pf : to-nat a = to-nat b) : a = b \elim n, a, b
   | suc n, fzero,  fzero  => idp
   | suc n, fsuc a, fsuc b => pmap fsuc (fin-ext {n} {a} {b} (eq-unsuc pf))
   | suc n, fzero,  fsuc b => absurd (zero-ne-suc pf)
   | suc n, fsuc a, fzero  => absurd (zero-ne-suc (inv pf))
 
-\function unplus {n m o : Nat} (p : n + m = n + o) : m = o => \elim n
+\func unplus {n m o : Nat} (p : n + m = n + o) : m = o \elim n
   | zero => p
   | suc n => unplus (eq-unsuc p)
 
-\function fin-partition-isSurj {n m : Nat} : isSurj (fin-partition {n} {m}) =>
+\func fin-partition-isSurj {n m : Nat} : isSurj (fin-partition {n} {m}) =>
   \lam b => inP (fin-departition b, (
     \case either-helper b \with {
       | inl p => transport (\lam c => (fin-partition (fin-departition c)) = c) (inv p.2) (
@@ -129,10 +129,10 @@
     }
   ))
 
-\function inP-helper {A : \Type} (p : TrP A) : TrP (\Sigma (a : A) (p = inP a)) => \elim p
+\func inP-helper {A : \Type} (p : TrP A) : TrP (\Sigma (a : A) (p = inP a)) \elim p
   | inP a => inP (a, idp)
 
-\function finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
+\func finiteCompIsFinite {A : \Set} (f : A -> A) (g : A -> A) (ff : finitePerm f) (gf : finitePerm g) : finitePerm (g `o f) =>
   (permCompIsPerm f g ff.1 gf.1, (ff.2.1 + gf.2.1, \case ff.2.2 \with { inP Bf => \case gf.2.2 \with { inP Bg =>
     inP (\lam a => Bf.1 a ||| Bg.1 a, (\lam a => \case Bf.2.1 a \with { inP bfs => \case Bg.2.1 a \with { inP bgs =>
       inP (\case bfs \with {
@@ -175,13 +175,13 @@
     }}))
   }}))
 
-\function finiteIdentity {A : \Set} : \Sigma (f : A -> A) (finitePerm f) =>
+\func finiteIdentity {A : \Set} : \Sigma (f : A -> A) (finitePerm f) =>
   (id, ((id, (idp, idp)), (0, inP ((\lam a => False), (\lam a => inP (inr idp), inP (\lam a => \case a \with {}, \lam b => \case b.2 \with {}))))))
 
-\function inP-map {A B : \Type} (f : A -> B) (a : TrP A) : TrP B => \elim a
+\func inP-map {A B : \Type} (f : A -> B) (a : TrP A) : TrP B \elim a
   | inP v => inP (f v)
 
-\function finiteInverse {A : \Set} (f : A -> A) (ff : finitePerm f) : \Sigma (g : A -> A) (finitePerm g) =>
+\func finiteInverse {A : \Set} (f : A -> A) (ff : finitePerm f) : \Sigma (g : A -> A) (finitePerm g) =>
   ((permInverse f ff.1).1, ((permInverse f ff.1).2, (ff.2.1, \case ff.2.2 \with {
     inP Bp => inP (Bp.1, (\lam a => inP-map (map-inr (\lam p => inv (pmap ff.1.1 p) *> fun-ext-inv ff.1.2.2 a)) (Bp.2.1 a), Bp.2.2))
   })))
