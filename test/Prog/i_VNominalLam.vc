@@ -1,0 +1,73 @@
+\import Data.Maybe
+\import Paths
+\import Data.Empty
+\import Data.Either
+\import Logic
+\import Data.Bool
+\import Combinators
+\import Data.Unit
+\import Prog.h_Perm
+
+\func maybe-is-nothing_b {A : \Type} (b : Maybe A) : Bool \elim b
+  | nothing => true
+  | _ => false
+
+\func maybe-is-nothing {A : \Type} : Maybe A -> \Prop => True o maybe-is-nothing_b
+
+\func just-ne-nothing {A : \Type} {a : A} (p : nothing = just a) : Empty => transport maybe-is-nothing p unit
+
+\func from_maybe {A : \Type} (b : Maybe A) (def : A) : A \elim b
+  | nothing => def
+  | just a  => a
+
+\func maybe-lift-decEq {A : \Type} (dec : \Pi (v v' : A) -> Dec (v = v')) (a b : Maybe A) : Dec (a = b) \elim a, b
+  | nothing, nothing => inr idp
+  | just a, nothing => inl (\lam x => just-ne-nothing (inv x))
+  | nothing, just b => inl (\lam x => just-ne-nothing x)
+  | just a, just b  => \case dec a b \with {
+    | inl neq => inl (\lam p => neq (pmap (\lam b => from_maybe b a) p))
+    | inr eq  => inr (pmap just eq)
+  }
+
+\func replace-var-helper {A : \Type} {v r : A} (d : Dec (v = r)) : Maybe A =>
+  \case d \with { | inl neq => just r | inr eq => nothing }
+
+\func replace-var {A : \Type} (d : \Pi (v v' : A) -> Dec (v = v')) (v : A) (r : A) : Maybe A =>
+  replace-var-helper (d v r)
+
+\truncated \data NLam (A : \Set) (d : \Pi (v v' : A) -> Dec (v = v')) : \Set
+  | var A
+  | app (NLam A d) (NLam A d)
+  | lam A (NLam A d)
+  | truncLam (v v' : A) (b b' : NLam A d) (replace-in-nlam v b = replace-in-nlam v' b') (i : I) \elim i {
+      | left  => lam v  b
+      | right => lam v' b'
+    }
+
+\func replace-in-nlam {A : \Set} {d : \Pi (v v' : A) -> Dec (v = v')} (r : A) (nlm : NLam A d) : NLam (Maybe A) (maybe-lift-decEq d) \elim nlm {
+  | var a => var (replace-var-helper (d r a))
+  | app a b => app (replace-in-nlam r a) (replace-in-nlam r b)
+  | lam a b => lam (replace-var-helper (d r a)) (replace-in-nlam r b)
+  | truncLam v v' (var a) (var b) nle i => {?}
+  | truncLam v v' (app a b) (app a' b') nle i => {?}
+}
+
+{-
+
+\truncated \data NLam (A : \Set) (d : \Pi (v v' : A) -> Dec (v = v')) : \Set
+  | var A
+  | app (NLam A d) (NLam A d)
+  | lam A (NLam A d)
+  | truncLam (v v' : A) (b b' : NLam A d) (fmap d (maybe-lift-decEq d) (replace-var d v) b = fmap d (maybe-lift-decEq d) (replace-var d v') b') (i : I) \elim i {
+      | left  => lam v  b
+      | right => lam v' b'
+    }
+
+\func fmap {A B : \Set} (decA : \Pi (v v' : A) -> Dec (v = v')) (decB : \Pi (v v' : B) -> Dec (v = v')) (f : A -> B) (nlm : NLam A decA) : NLam B decB \elim nlm {
+    | var a => var (f a)
+    | app a b => app (fmap decA decB f a) (fmap decA decB f b)
+    | lam v b => lam (f v) (fmap decA decB f b)
+    | truncLam v v' b b' nle i => {?}
+  }
+
+-}
