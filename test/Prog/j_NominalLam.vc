@@ -207,6 +207,7 @@
   | app n n' => pmap2 app (replace-commutes a b c d anc bnc aned n) (replace-commutes a b c d anc bnc aned n')
   | lam v n => pmap2 lam (replace-nat-commutes a b c d v anc bnc aned) (replace-commutes a b c d anc bnc aned n)
 
+{-
 \func replace-equiv-with-any-fresh {v n n' : Nat} {a b : Lam}
   (fna : n FreshIn (lam v a)) (fnb : n FreshIn b) (fna' : n' FreshIn (lam v a)) (fnb' : n' FreshIn b)
   (p : Alpha (replace v n a) b) : Alpha (replace v n' a) b \elim a, b, p
@@ -245,20 +246,43 @@
                              {?})
          }
        )
-{-
-\func replace-equiv-with-any-fresh {v n n' : Nat} {a b : Lam}
-  (fna : n FreshIn (lam v a)) (fnb : n FreshIn b) (fna' : n' FreshIn (lam v a)) (fnb' : n' FreshIn b)
-  (p : Alpha (replace v n a) b) : Alpha (replace v n' a) b \elim a, b, p
-
-    \case either-helper (v =? aa) \with {
-      | inl vnea => \let | fa' => transport (\lam x => f FreshIn lam (replace-nat n x) (replace v n ab)) vnea.2 fa
-                         | fp' => transport (\lam x => Alpha (replace (replace-nat n x) f (replace v n ab)) (replace ba f bb)) vnea.2 fp
-                     \in transport (\lam x => Alpha (lam (replace-nat n' x) (replace v n' ab)) (lam ba bb)) (inv vnea.2) {?}
-      | inr veqa => \let | fa' => transport (\lam x => f FreshIn lam (replace-nat n x) (replace v n ab)) veqa.2 fa
-                         | fp' => transport (\lam x => Alpha (replace (replace-nat n x) f (replace v n ab)) (replace ba f bb)) veqa.2 fp
-                     \in transport (\lam x => Alpha (lam (replace-nat n' x) (replace v n' ab)) (lam ba bb)) (inv veqa.2) {?}
-    }
 -}
+
+\func replace_preserves_alpha {v n : Nat} {a b : Lam} (alp : Alpha a b) {m : Nat} (lp : lam_ops a Le m) : Alpha (replace v n a) (replace v n b) \elim a, b, alp, m, lp {
+  | var a, var b, alpha_var p, m, le_z => alpha_var (pmap (\lam x => replace-nat {v} {x} n (v =? x)) p)
+  | app a b, app a' b', alpha_app p p', suc m, le_ss lp => alpha_app
+    (replace_preserves_alpha p  {m} (le-trans (plus_le_right (lam_ops b) (lam_ops a)) lp))
+    (replace_preserves_alpha p' {m} (le-trans (plus_le_left  (lam_ops a) (lam_ops b)) lp))
+  | lam x b, lam x' b', alpha_lam f fib fib' p, suc m, le_ss lp => \case either-helper (v =? x) \with {
+      | inl vnex => transport (\lam r => Alpha (lam (replace-nat n r) (replace v n b)) (lam (replace-nat n (v =? x')) (replace v n b'))) (inv vnex.2) (
+        \case either-helper (v =? x') \with {
+          | inl vnex' => {?}
+          | inr veqx' => {?}
+        })
+      | inr veqx => transport (\lam r => Alpha (lam (replace-nat n r) (replace v n b)) (lam (replace-nat n (v =? x')) (replace v n b'))) (inv veqx.2) (
+        \case either-helper (v =? x') \with {
+          | inl vnex' => transport (\lam r => Alpha (lam n (replace v n b)) (lam (replace-nat n r) (replace v n b'))) (inv vnex'.2) (
+            alpha_lam {?} {?} {?} {?})
+          | inr veqx' => \let term => app (lam n (replace v n b)) (lam n (replace v n b'))
+                            | nf => fresh term
+                            | uup => transport (\lam r => Alpha (replace v n b) (replace r n b')) (inv veqx'.1)
+                                     (transport (\lam r => Alpha (replace r n b) (replace x' n b')) (inv veqx.1)
+                                     (transport (\lam r => Alpha (replace x n b) r) (replace-override x' f n b' (fresh_inside_lam fib').2)
+                                     (transport (\lam r => Alpha r (replace f n (replace x' f b'))) (replace-override x f n b (fresh_inside_lam fib).2)
+                                     (replace_preserves_alpha {f} {n} p {m} (transport (\lam r => r Le m) (replace-preserves-structure x f b) lp)))))
+            \in transport (\lam r => Alpha (lam n (replace v n b)) (lam (replace-nat n r) (replace v n b'))) (inv veqx'.2) (
+            alpha_lam nf (fresh_inside_app (fresh-is-fresh term)).1 (fresh_inside_app (fresh-is-fresh term)).2 (
+               replace_preserves_alpha uup {m} (transport (\lam r => r Le m) (replace-preserves-structure v n b) lp)))
+        })
+    }
+}
+
+\func replace-equiv-with-any-fresh {v v' n n' : Nat} {a b : Lam}
+          (pna  : n  FreshIn a) (pnb  : n  FreshIn b) (pna' : n' FreshIn a) (pnb' : n' FreshIn b)
+          (p : Alpha (replace v n a) (replace v' n b)) : Alpha (replace v n' a) (replace v' n' b) =>
+     transport (\lam r => Alpha r (replace v' n' b)) (replace-override v n n' a pna) (
+     transport (\lam r => Alpha (replace n n' (replace v n a)) r) (replace-override v' n n' b pnb) (
+     replace_preserves_alpha {n} {n'} p {lam_ops (replace v n a)} (le_refl (lam_ops (replace v n a)))))
 
 {-
 \func replace-equiv-with-any-fresh {v v' n n' : Nat} {a b : Lam}
@@ -335,7 +359,6 @@
             })
 -}
 
-{-
 \func trans_alpha (a b c : Lam) (pab : Alpha a b) (pbc : Alpha b c) (n : Nat) (r : lam_ops b Le n) : Alpha a c \elim a, b, c, pab, pbc, n, r
   | var a, var b, var c, alpha_var pab, alpha_var pbc, zero,  le_z => alpha_var (pab *> pbc)
   | var a, var b, var c, alpha_var pab, alpha_var pbc, suc n, le_z => alpha_var (pab *> pbc)
@@ -356,7 +379,6 @@
              (transport (\lam x => Le x n) (replace-preserves-structure bv f bb) p))
 
 \func AlphaTrans : Transitive Alpha => \lam a b c ab bc => trans_alpha a b c ab bc (lam_ops b) (le_refl (lam_ops b))
--}
 
 \truncated \data FLam : \Set
   | flam Lam
