@@ -316,15 +316,22 @@
                                  \in transport (\lam r => Alpha r (replace x' n b')) (replace-override x finterm n b (fresh_inside_app (fresh_inside_lam (fresh_inside_lam (fresh-is-fresh term)).2).2).1) (
                                      transport (\lam r => Alpha (replace finterm n (replace x finterm b)) r) (replace-override x' finterm n b' (fresh_inside_app (fresh_inside_lam (fresh_inside_lam (fresh-is-fresh term)).2).2).2) pN')
                           | term => app (app (lam (replace-nat n (v =? x)) (replace v n b)) (lam (replace-nat n (v =? x')) (replace v n b')))
-                                        (lam v (var n))
+                                        (lam v (app (var n) (app (replace x n b) (replace x' n b'))))
                           | fr => fresh term
                           | fr_fresh_in_lnvx_vnb  : fr FreshIn (lam (replace-nat n (v =? x)) (replace v n b))   => (fresh_inside_app (fresh_inside_app (fresh-is-fresh term)).1).1
                           | fr_fresh_in_lnvx_vnb' : fr FreshIn (lam (replace-nat n (v =? x')) (replace v n b')) => (fresh_inside_app (fresh_inside_app (fresh-is-fresh term)).1).2
                           | fr_fresh_in_vnb  : fr FreshIn (replace v n b)  => (fresh_inside_lam fr_fresh_in_lnvx_vnb).2
                           | fr_fresh_in_vnb' : fr FreshIn (replace v n b') => (fresh_inside_lam fr_fresh_in_lnvx_vnb').2
                           | fr_ne_v : v != fr => (fresh_inside_lam (fresh_inside_app (fresh-is-fresh term)).2).1
-                          | fr_ne_n : n != fr => fresh_inside_var (fresh_inside_lam (fresh_inside_app (fresh-is-fresh term)).2).2
-                          | pn' : Alpha (replace x fr b) (replace x' fr b') => {?}
+                          | fr_ne_n : n != fr => fresh_inside_var (fresh_inside_app (fresh_inside_lam (fresh_inside_app (fresh-is-fresh term)).2).2).1
+                          | pn' : Alpha (replace x fr b) (replace x' fr b') =>
+                              transport (\lam r => Alpha r (replace x' fr b')) (replace-override x n fr b (fresh_inside_lam nfia).2) (
+                              transport (\lam r => Alpha (replace n fr (replace x n b)) r) (replace-override x' n fr b' (fresh_inside_lam nfib).2) (
+                              replace_preserves_alpha
+                                pn
+                                (fresh_inside_app (fresh_inside_app (fresh_inside_lam (fresh_inside_app (fresh-is-fresh term)).2).2).2).1
+                                (fresh_inside_app (fresh_inside_app (fresh_inside_lam (fresh_inside_app (fresh-is-fresh term)).2).2).2).2
+                                {m} (transport (\lam r => r Le m) (replace-preserves-structure x n b) lp)))
                       \in alpha_lam fr
                            fr_fresh_in_lnvx_vnb
                            fr_fresh_in_lnvx_vnb'
@@ -332,8 +339,28 @@
                              | inl vnex => transport (\lam r => Alpha (replace (replace-nat n r) fr (replace v n b))
                                              (replace (replace-nat n (v =? x')) fr (replace v n b'))) (inv vnex.2) (
                                \case either-helper (v =? x') \with {
-                                 | inl vnex' => {?}
-                                 | inr veqx' => {?}
+                                 | inl vnex' => transport (\lam r => Alpha (replace x fr (replace v n b)) (replace (replace-nat n r) fr (replace v n b'))) (inv vnex'.2) (
+                                                  transport (\lam r => Alpha r (replace x' fr (replace v n b')))
+                                                    (replace-commutes v n x fr vnex.1 ((fresh_inside_lam nfia).1 o inv) fr_ne_v b) (
+                                                  transport (\lam r => Alpha (replace v n (replace x fr b)) r)
+                                                    (replace-commutes v n x' fr vnex'.1 ((fresh_inside_lam nfib).1 o inv) fr_ne_v b') (
+                                                  replace_preserves_alpha
+                                                    pn'
+                                                    (fresh_inside_replace (fresh_inside_lam nfia).2 fr_ne_n)
+                                                    (fresh_inside_replace (fresh_inside_lam nfib).2 fr_ne_n)
+                                                    {m} (transport (\lam r => r Le m) (replace-preserves-structure x fr b) lp))))
+                                 | inr veqx' => transport (\lam r => Alpha (replace x fr (replace v n b))
+                                             (replace (replace-nat n r) fr (replace v n b'))) (inv veqx'.2) (
+                                                  transport (\lam r => Alpha (replace x fr (replace v n b)) r)
+                                                    (inv (replace-override v n fr b' (fresh_inside_lam nfib).2)) (
+                                                  transport (\lam r => Alpha r (replace v fr b'))
+                                                    (replace-commutes v n x fr (vnex.1) ((fresh_inside_lam nfia).1 o inv) fr_ne_v b) (
+                                                  transport (\lam r => Alpha (replace v n (replace x fr b)) r) (replace-cancel v n fr b' fr_ne_v) (
+                                                  replace_preserves_alpha {v} {n}
+                                                   (transport (\lam r => Alpha (replace x fr b) (replace r fr b')) (inv veqx'.1) pn')
+                                                   (fresh_inside_replace (fresh_inside_lam nfia).2 fr_ne_n)
+                                                   (fresh_inside_replace (fresh_inside_lam nfib).2 fr_ne_n)
+                                                   {m} (transport (\lam r => r Le m) (replace-preserves-structure x fr b) lp)))))
                                })
                              | inr veqx => transport (\lam r => Alpha (replace (replace-nat n r) fr (replace v n b))
                                              (replace (replace-nat n (v =? x')) fr (replace v n b'))) (inv veqx.2) (
