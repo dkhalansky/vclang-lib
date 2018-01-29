@@ -73,14 +73,26 @@
   }
 
 \func fmap-homomorphism {A B C : \Set} {decA : \Pi (v v' : A) -> Dec (v = v')} {decB : \Pi (v v' : B) -> Dec (v = v')} {decC : \Pi (v v' : C) -> Dec (v = v')}
-  (f : A -> B) (g : B -> C) : (fmap decB decC g) o (fmap decA decB f) = fmap decA decC (g o f) => {?}
+  (f : A -> B) (g : B -> C) (b : NLam A decA) : fmap decB decC g (fmap decA decB f b) = fmap decA decC (g o f) b \elim b {
+  | var v => idp
+  | app a b => pmap2 app (fmap-homomorphism f g a) (fmap-homomorphism f g b)
+  | lam a b => pmap (lam (g (f a))) (fmap-homomorphism f g b)
+  | truncLam v v' b b' nle i => path (\lam j => truncLam (idp @ j) (idp @ j) ((fmap-homomorphism f g b) @ j) ((fmap-homomorphism f g b') @ j)
+      {?}
+      (idp {I} {i} @ j))
+}
 
 {-
-    fmap decB (maybe-lift-decEq decB) (replace-var decB (f v)) (fmap decA decB f b) =
-    fmap decB (maybe-lift-decEq decB) (replace-var decB (f v')) (fmap decA decB f b')
+    fmap (replace-var decC (g (f v)))  (fmap-homomorphism f g b  @ j) =
+    fmap (replace-var decC (g (f v'))) (fmap-homomorphism f g b' @ j)
 -}
 
 {-
-    fmap decA (maybe-lift-decEq decA) (replace-var decA v) b =
-    fmap decA (maybe-lift-decEq decA) (replace-var decA v') b'
+    fmap ((replace-var (f v )) o f) b =
+    fmap ((replace-var (f v')) o f) b'
+-}
+
+{-
+    fmap (replace-var v ) b =
+    fmap (replace-var v') b'
 -}
