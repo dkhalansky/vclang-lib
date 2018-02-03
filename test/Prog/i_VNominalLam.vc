@@ -7,6 +7,7 @@
 \import Combinators
 \import Data.Unit
 \import Prog.h_Perm
+\import Prog.d_Inj
 
 \func maybe-is-nothing_b {A : \Type} (b : Maybe A) : Bool \elim b
   | nothing => true
@@ -35,64 +36,70 @@
 \func replace-var {A : \Type} (d : \Pi (v v' : A) -> Dec (v = v')) (v : A) (r : A) : Maybe A =>
   replace-var-helper (d v r)
 
-{-
+\func unjust {A : \Type} (def : A) (ma : Maybe A) : A \elim ma
+  | just a => a
+  | nothing => def
+
+\func just-inj {A : \Set} : isInj (just {A}) =>
+  \lam r1 r2 p => pmap (unjust r1) p
+
+\func replace-var-inj {A : \Set} {d : \Pi (v v' : A) -> Dec (v = v')} {v : A} : isInj (\lam x => replace-var-helper (d v x)) => \lam r1 r2 p =>
+  \case either-helper (d v r1) \with {
+    | inl vner1 => \case either-helper (d v r2) \with {
+                      | inl vner2 => \let np => transport (\lam r => just r1 = replace-var-helper r) vner2.2
+                                               (transport (\lam r => replace-var-helper r = replace-var-helper (d v r2)) vner1.2 p)
+                                      \in just-inj r1 r2 np
+                      | inr veqr2 => \let np => transport (\lam r => just r1 = replace-var-helper r) veqr2.2
+                                               (transport (\lam r => replace-var-helper r = replace-var-helper (d v r2)) vner1.2 p)
+                                      \in absurd (just-ne-nothing (inv np))
+                    }
+    | inr veqr1 => \case either-helper (d v r2) \with {
+                      | inl vner2 => \let np => transport (\lam r => nothing = replace-var-helper r) vner2.2
+                                               (transport (\lam r => replace-var-helper r = replace-var-helper (d v r2)) veqr1.2 p)
+                                      \in absurd (just-ne-nothing np)
+                      | inr veqr2 => inv veqr1.1 *> veqr2.1
+                    }
+  }
+
 \truncated \data NLam (A : \Set) (d : \Pi (v v' : A) -> Dec (v = v')) : \Set
   | var A
   | app (NLam A d) (NLam A d)
   | lam A (NLam A d)
-  | truncLam (v v' : A) (b b' : NLam A d) (replace-in-nlam v b = replace-in-nlam v' b') (i : I) \elim i {
+  | truncLam (v v' : A) (b b' : NLam A d)
+    (fmap d (maybe-lift-decEq d) (replace-var d v) (replace-var-inj {A} {d}) b = fmap d (maybe-lift-decEq d) (replace-var d v') (replace-var-inj {A} {d}) b')
+    (i : I) \elim i {
       | left  => lam v  b
       | right => lam v' b'
     }
 
-\func replace-in-nlam {A : \Set} {d : \Pi (v v' : A) -> Dec (v = v')} (r : A) (nlm : NLam A d) : NLam (Maybe A) (maybe-lift-decEq d) \elim nlm {
-  | var a => var (replace-var-helper (d r a))
-  | app a b => app (replace-in-nlam r a) (replace-in-nlam r b)
-  | lam a b => lam (replace-var-helper (d r a)) (replace-in-nlam r b)
-  | truncLam v v' (var a) (var b) nle i => {?}
-  | truncLam v v' (app a b) (app a' b') nle i => {?}
-}
--}
-
-\truncated \data NLam (A : \Set) (d : \Pi (v v' : A) -> Dec (v = v')) : \Set
-  | var A
-  | app (NLam A d) (NLam A d)
-  | lam A (NLam A d)
-  | truncLam (v v' : A) (b b' : NLam A d) (fmap d (maybe-lift-decEq d) (replace-var d v) b = fmap d (maybe-lift-decEq d) (replace-var d v') b') (i : I) \elim i {
-      | left  => lam v  b
-      | right => lam v' b'
-    }
-
-\func fmap {A B : \Set} (decA : \Pi (v v' : A) -> Dec (v = v')) (decB : \Pi (v v' : B) -> Dec (v = v')) (f : A -> B) (nlm : NLam A decA) : NLam B decB \elim nlm {
+\func fmap {A B : \Set} (decA : \Pi (v v' : A) -> Dec (v = v')) (decB : \Pi (v v' : B) -> Dec (v = v')) (f : A -> B) (finj : isInj f) (nlm : NLam A decA) : NLam B decB \elim nlm {
     | var a => var (f a)
-    | app a b => app (fmap decA decB f a) (fmap decA decB f b)
-    | lam v b => lam (f v) (fmap decA decB f b)
-    | truncLam v v' b b' nle i => \let p : lam (f v) (fmap decA decB f b) = lam (f v') (fmap decA decB f b') =>
-          path (truncLam (f v) (f v') (fmap decA decB f b) (fmap decA decB f b') {?})
+    | app a b => app (fmap decA decB f finj a) (fmap decA decB f finj b)
+    | lam v b => lam (f v) (fmap decA decB f finj b)
+    | truncLam v v' b b' nle i => \let p : lam (f v) (fmap decA decB f finj b) = lam (f v') (fmap decA decB f finj b') =>
+          path (truncLam (f v) (f v') (fmap decA decB f finj b) (fmap decA decB f finj b') {?})
         \in p @ i
   }
 
 \func fmap-homomorphism {A B C : \Set} {decA : \Pi (v v' : A) -> Dec (v = v')} {decB : \Pi (v v' : B) -> Dec (v = v')} {decC : \Pi (v v' : C) -> Dec (v = v')}
-  (f : A -> B) (g : B -> C) (b : NLam A decA) : fmap decB decC g (fmap decA decB f b) = fmap decA decC (g o f) b \elim b {
+  (f : A -> B) (g : B -> C) (finj : isInj f) (ginj : isInj g) (b : NLam A decA) :
+  fmap decB decC g ginj (fmap decA decB f finj b) = fmap decA decC (g o f) (compInjIsInj f g {finj} {ginj}) b \elim b {
   | var v => idp
-  | app a b => pmap2 app (fmap-homomorphism f g a) (fmap-homomorphism f g b)
-  | lam a b => pmap (lam (g (f a))) (fmap-homomorphism f g b)
-  | truncLam v v' b b' nle i => path (\lam j => truncLam (idp @ j) (idp @ j) ((fmap-homomorphism f g b) @ j) ((fmap-homomorphism f g b') @ j)
-      {?}
-      (idp {I} {i} @ j))
+  | app a b => pmap2 app (fmap-homomorphism f g finj ginj a) (fmap-homomorphism f g finj ginj b)
+  | lam a b => pmap (lam (g (f a))) (fmap-homomorphism f g finj ginj b)
+  | truncLam v v' b b' nle i => path (\lam j => truncLam (idp @ j) (idp @ j) ((fmap-homomorphism f g finj ginj b) @ j) ((fmap-homomorphism f g finj ginj b') @ j) (\let p :
+        fmap decC (maybe-lift-decEq decC) (replace-var decC (g (f v)))  (replace-var-inj {C} {decC}) (fmap-homomorphism f g finj ginj b  @ j) =
+        fmap decC (maybe-lift-decEq decC) (replace-var decC (g (f v'))) (replace-var-inj {C} {decC}) (fmap-homomorphism f g finj ginj b' @ j)
+        => {?}
+  \in p) (idp {I} {i} @ j))
 }
 
 {-
-    fmap (replace-var decC (g (f v)))  (fmap-homomorphism f g b  @ j) =
-    fmap (replace-var decC (g (f v'))) (fmap-homomorphism f g b' @ j)
+      fmap decA (maybe-lift-decEq decA) (replace-var decA v ) replace-var-inj b =
+      fmap decA (maybe-lift-decEq decA) (replace-var decA v') replace-var-inj b'
 -}
 
 {-
     fmap ((replace-var (f v )) o f) b =
     fmap ((replace-var (f v')) o f) b'
--}
-
-{-
-    fmap (replace-var v ) b =
-    fmap (replace-var v') b'
 -}
